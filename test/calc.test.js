@@ -1,7 +1,7 @@
 import * as c from "../js/calc.js";
 let pass = 0, fail = 0;
 const eq = (name, got, exp) => { const ok = typeof exp === "number" ? Math.abs(got - exp) < 0.01 : got === exp; ok ? pass++ : fail++; console.log((ok ? "PASS " : "FAIL ") + name + " — got " + got + (ok ? "" : " expected " + exp)); };
-// Keluarga Tan Asset 1 (slide 169)
+// Keluarga Tan Asset 1 (slide 171)
 let a1 = c.rpgt({ person: "citizen", acqDate: "2009-06-01", dispDate: "2026-02-05", dispPrice: 1500000, acqPrice: 300000, acqCosts: 9000 });
 eq("A1 gain", a1.gain, 1191000); eq("A1 rate", a1.rate, 0); eq("A1 tax", a1.tax, 0); eq("A1 retention 3%", a1.retention, 45000); eq("A1 return due", c.iso(a1.returnDue), "2026-04-06");
 // Asset 2 partnership
@@ -18,7 +18,7 @@ eq("S53 gain", s53.gain, 426000); eq("S53 year6 rate", s53.rate, 10); eq("S53 ta
 // Sch 4 slide 40
 let s40 = c.rpgt({ person: "citizen", acqDate: "2023-01-01", dispDate: "2026-06-01", dispPrice: 170000, acqPrice: 100000 });
 eq("S40 sch4 floor", s40.sch4, 10000);
-// Non-citizen RPC example slide 2989: gain 2m (RPC 20% cost 1m -> 3m), year 7, Part III 10% after 10% exemption = 180,000
+// Non-citizen RPC example slide 3009: gain 2m (RPC 20% cost 1m -> 3m), year 7, Part III 10% after 10% exemption = 180,000
 let nc = c.rpgt({ person: "noncitizen", asset: "rpc", acqDate: "2020-01-15", dispDate: "2026-06-15", dispPrice: 3000000, acqPrice: 1000000 });
 eq("NC tax", nc.tax, 180000); eq("NC retention 7%", nc.retPct, 7);
 // Part II within 3 years retention 5%

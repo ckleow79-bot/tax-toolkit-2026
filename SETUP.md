@@ -32,7 +32,7 @@ If the phone says "Live session not available", check the internet connection an
 ## On the day
 
 - Projector: `presenter.html` → **Show join QR** while people arrive, then the *Opening* poll.
-- Knowledge checks KC1–KC4 follow deck slides 73, 96, 140 and 156; *W2.4 · SVDP* follows slide 242; room checks close each session.
+- Knowledge checks KC1–KC4 follow deck slides 73, 96, 142 and 158; *W2.4 · SVDP* follows slide 244; room checks close each session.
 - **Open** → let the room answer (the stage shows only the number of answers) → **Reveal** (it closes the poll, waits a moment for late answers, then shows the result). **Hide** clears the poll from phones.
 - Question wall: tap **Question wall** to open it at the start and close it at the end of the day — while closed, nobody can post or upvote. **Show questions** projects the top eight. Moderate from the left panel (all questions, newest first, not projected): **Hide** takes a question off phones and the projector; a question with any client detail — **Delete** it.
 

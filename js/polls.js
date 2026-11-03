@@ -1,4 +1,4 @@
-// Live polls — knowledge checks follow deck slides 73, 96, 140, 156 (answers per the deck). `a` = index of the correct option; null = opinion poll.
+// Live polls — knowledge checks follow deck slides 73, 96, 142, 158 (MASTER v8) (answers per the deck). `a` = index of the correct option; null = opinion poll.
 export const POLLS = [
   { id: "open", group: "Opening", q: "Which of these lands on your desk most often?", o: ["RPGT on property", "CGT on shares", "Stamp duty", "e-Invoice"], a: null },
   { id: "kc1-1", group: "KC1 · RPGT", q: "A partnership sells a shop lot in year 5. Rate?", o: ["20% — Part II", "15% — Part I (the partnership is the disposer)", "0% — the partners are individuals", "30% — Part III"], a: 1, why: "Sch 5 Part I · Sch 2 para 35" },
