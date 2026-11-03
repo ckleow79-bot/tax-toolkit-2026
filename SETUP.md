@@ -15,7 +15,7 @@ To change the presenter: Firestore Database → Rules → change the email in `p
 
 For a new project from scratch: create the project (Analytics off) → Firestore in asia-southeast1, production mode → Authentication: enable Anonymous and Google → add your Pages domain under Authorized domains → paste `firestore.rules` with `PRESENTER_EMAIL` replaced (lower case) → Publish → register a Web app and paste its config into `firebase-config.js` → GitHub Settings → Pages → main / root.
 
-**Rules updated for v1.3 (3 Nov 2026):** question IDs must be Firestore auto-IDs; hidden questions are readable only by the presenter; the question wall accepts posts and upvotes only while the presenter has it open; votes must be one of the poll's options. If you rebuild the project, paste the whole of the current `firestore.rules`.
+**Rules — last changed in v1.3 (3 Nov 2026), unchanged in v1.4:** question IDs must be Firestore auto-IDs; hidden questions are readable only by the presenter; the question wall accepts posts and upvotes only while the presenter has it open; votes must be one of the poll's options. If you rebuild the project, paste the whole of the current `firestore.rules`.
 
 ## Two-device test (5 minutes)
 
@@ -38,7 +38,7 @@ If the phone says "Live session not available", check the internet connection an
 
 ## After the training
 
-- Close the question wall. Firestore → delete the `polls` and `questions` collections, or delete the whole project.
+- Close the question wall. Firestore → delete the `polls` and `questions` collections and the `control/state` document, or delete the whole project.
 - The tools keep working without Firebase. To switch live features off, set `firebaseConfig` back to `null`.
 
 ## Data and PDPA
@@ -46,4 +46,5 @@ If the phone says "Live session not available", check the internet connection an
 - Participants sign in anonymously; no names, emails or phone numbers are collected, and questions carry no author. Firebase Authentication keeps an anonymous account record per device (Firebase deletes anonymous accounts automatically once they are more than 30 days old), and Google's servers log IP addresses as any web service does.
 - Stored in Singapore (asia-southeast1) on Google Firebase: poll choices with a timestamp (readable only by the presenter and the person who voted); question text with a timestamp; and, for each question, the anonymous user IDs of the devices that backed it. Those IDs are visible to anyone in the session — they are random and not linked to a name, but they show which questions one device backed.
 - Anonymous sign-in means someone could vote again from a private window — acceptable for training polls.
+- The knowledge-check answers ship in the site's code (js/polls.js), so a determined participant could read them before Reveal — acceptable for practice questions; do not reuse these polls as an assessed test.
 - Calculator inputs never leave the browser. Fonts and icons are served with the site, except one: the design system's font file asks Google Fonts for a Chinese webfont (Noto Sans SC), so each phone's IP address reaches Google Fonts. Removing it is a change to the B & K Academy Design System source, not to this repo.

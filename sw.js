@@ -1,5 +1,5 @@
 // Offline cache — the eight tools work after the first visit, even without signal. Live polls still need internet.
-const CACHE = "tct26-v1.4";
+const CACHE = "tct26-v1.4.1";
 const FILES = [
 "./",
 "./css/app.css",

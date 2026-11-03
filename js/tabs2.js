@@ -33,8 +33,8 @@ const ITEMS = [
   ["Interest to the holding company (not a treasury centre)", "Payer self-bills", "SG 8.3(g), Ex 16"],
   ["Interest from a bank to the public", "The bank (lender) issues", "SG 8.3(g)(i)"],
   ["Single-tier dividend", "No e-Invoice", "GL 1.6.7 · SG 11.1.2"],
-  ["Imported services (e.g. UK consultancy)", "Self-bill by end of the month after the earlier of payment or invoice — include service tax", "SG 10.4.7, 10.4.9 · FAQ Q38"],
-  ["Imported goods", "Self-bill by end of the 2nd month after customs clearance", "SG 10.4 · FAQ Q38"],
+  ["Imported services (e.g. UK consultancy)", "Self-bill by end of the month after the earlier of payment or invoice — include service tax", "SG 10.4.7, 10.4.9 · FAQ Q38, Q89"],
+  ["Imported goods", "Self-bill by end of the 2nd month after customs clearance", "SG 10.4.8 · FAQ Q38, Q82"],
   ["Purchases from an exempt small supplier", "No e-Invoice — keep the supplier's invoice; never self-bill", "FAQ Q27–Q28"],
   ["Refundable tenancy deposit received", "No e-Invoice", "FAQ Q57"],
   ["Group company pays our bill, we repay at cost", "No e-Invoice between the group companies", "SG Example 9"],
@@ -201,9 +201,9 @@ export function dates(el) {
       ${fDate("dl-d", "Date", "2026-03-20")}${fDate("dl-t", "Today (for days left)", today)}</div><div class="card result" id="dl-out"></div></div>
     <div class="card"><h3>Compliance calendar 2026 – 2028</h3><div class="clocks">${CAL.map(([d, w, who, t]) => `<div class="clock ${c.D(d) < c.D(today) ? "past" : ""}"><span class="d">${c.fmtDate(c.D(d))}</span><span class="w"><b>${esc(w)}</b> · ${who} <span class="tag ${t}">${{ inforce: "IN FORCE", proposed: "PROPOSED", guide: "LHDN GUIDELINE" }[t]}</span></span></div>`).join("")}</div><div class="sub" style="margin-top:8px">Tags per item: IN FORCE = law or gazetted · LHDN GUIDELINE = LHDN position · PROPOSED = Budget 2027, not yet law.</div>${auth("inforce", "ITA s.107C(2), s.152A(3B) · Stamp Act ss.35A, 36 (Act 863) · GL v4.8 · Budget 2027 (proposed items)")}</div>`;
   const run = () => { const e = $("#dl-e").value, d = $("#dl-d").value, t = $("#dl-t").value; if (!d || !t) return; const D0 = c.D(d), T = c.D(t);
-    const clocks = { prop: [[30, "Stamp the transfer (buyer)"], [60, "e-CKHT 1A (disposer) + e-CKHT 2A and retention (acquirer)"], [90, "RPGT payment"]],
-      rpc: [[30, "Stamp the share transfer (buyer, DS2)"], [60, "e-CKHT 1B (disposer) + e-CKHT 2A and retention (acquirer)"], [90, "RPGT payment"]],
-      cgt: [[30, "Stamp the share transfer (buyer, DS2)"], [60, "e-CKM return and CGT payment"]], stamp: [[30, "Stamp the instrument — penalty from day 31"]] }[e];
+    const clocks = { prop: [[30, "Stamp the SPA (buyer) — the MOT is stamped within 30 days of its own execution"], [60, "e-CKHT 1A (disposer) + e-CKHT 2A and retention (acquirer)"], [90, "RPGT payment"]],
+      rpc: [[30, "Stamp the SPA — the share transfer form within 30 days of its own execution"], [60, "e-CKHT 1B (disposer) + e-CKHT 2A and retention (acquirer)"], [90, "RPGT payment"]],
+      cgt: [[30, "Stamp the SPA — the share transfer form within 30 days of its own execution"], [60, "e-CKM return and CGT payment"]], stamp: [[30, "Stamp the instrument — penalty from day 31"]] }[e];
     const items = clocks.map(([n, w]) => { const due = c.addDays(D0, n); return { due, w, n, left: Math.round((due - T) / 864e5) }; });
     if (e === "stamp") { const due = items[0].due; items.push({ due: c.addMonths(due, 3), w: "After this date the penalty rises to the higher of RM100 or 20%", n: null, left: Math.round((c.addMonths(due, 3) - T) / 864e5) }); }
     const W = cw(), maxD = Math.max(...items.map((i) => (i.due - D0) / 864e5)), X = (dd) => 30 + (dd / maxD) * (W - 80), tx = (T - D0) / 864e5;
