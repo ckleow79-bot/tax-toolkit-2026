@@ -11,13 +11,13 @@ export function regime(el) {
     ${seg("rg-seg", [["land", "Land or property"], ["shares", "Shares in a company with land"]], "land", "Asset type")}
     <div class="grid two"><div class="card" id="rg-tree"></div>
     <div class="card"><h3>Why order matters</h3><ul class="bk-list"><li>A trading gain is never RPGT — RPGTA s.2 'gain' excludes income-taxable gains, so the s.4(a) question comes first.</li>
-    <li>An RPGT clearance does not close the s.4(a) question — <i>KPHDN v Kristal Penaga</i> (HC, July 2026).</li><li>Compulsory acquisition is not a sale — <i>Wiramuda</i> (FC 2023); <i>Lush Development</i> (CA, 19 Oct 2026) applies it to closed years.</li>
+    <li>Filing RPGT does not close the s.4(a) question — in <i>KP v KPHDN</i> (SCIT) LHDN raised a YA2014 s.4(a) assessment on land held ~20 years; the SCIT set it aside as capital.</li><li>Compulsory acquisition is not a sale — <i>Wiramuda</i> (FC, 9 Dec 2022); <i>Lush Development</i> (CA, 19 Oct 2026) applies it to closed years.</li>
     <li>Evidence of intention must exist at acquisition, not be written at audit (ITA Sch 5 para 13; RPGTA s.18).</li></ul>
     <h3 style="margin-top:18px">Badges of trade — what LHDN tests</h3>
     <table class="comp"><tr><td>Intention at acquisition</td><td>Board minutes, loan purpose</td></tr><tr><td>Period of ownership</td><td>Alf Properties: 10+ years</td></tr><tr><td>Frequency</td><td>Mount Pleasure: 5 dealings</td></tr><tr><td>Work done to sell</td><td>Subdivision, layout plans</td></tr><tr><td>Reason for sale</td><td>Forced sale vs planned exit</td></tr></table>
     ${auth("inforce", "ITA ss.4(a), 4(aa), 4C · RPGTA s.2, s.3 · Sch 2 para 3(1)(f) · CCH ¶3-110A")}</div></div>`;
   const LAND = [
-    { q: "Compensation on compulsory acquisition — even of stock?", yes: { title: "Not income · RPGT no gain no loss", body: "Compensation has no profit element (<i>Wiramuda</i>, FC 2023). For RPGT, compulsory acquisition is no gain no loss under Sch 2 para 3(1)(f). If s.4C tax was paid on compensation, check refund rights (<i>Lush Development</i>, CA 19 Oct 2026).", auth: "Wiramuda [2023] 4 MLJ 753 · RPGTA Sch 2 para 3(1)(f)", tag: "inforce" }, no: "next" },
+    { q: "Compensation on compulsory acquisition — even of stock?", yes: { title: "Not income · RPGT no gain no loss", body: "Compensation has no profit element (<i>Wiramuda</i>, FC, 9 Dec 2022). For RPGT, compulsory acquisition is no gain no loss under Sch 2 para 3(1)(f). If s.4C tax was paid on compensation, check refund rights (<i>Lush Development</i>, CA 19 Oct 2026).", auth: "Wiramuda [2023] 4 MLJ 753 · RPGTA Sch 2 para 3(1)(f)", tag: "inforce" }, no: "next" },
     { q: "Held as stock, or bought with an intention to trade?", hint: "Badges of trade: intention, period, frequency, work done to sell, reason for sale.", yes: { title: "Business income — ITA s.4(a)", body: "Taxed in the annual return (Form B / P / C) at scale rates, 24% or MSME bands. Not RPGT. Watch e-Invoice and CP500 / CP204 once in business.", auth: "ITA s.4(a) · RPGTA s.2 'gain'", tag: "inforce" }, no: "next" },
     { q: "Malaysian land (any disposer) — or RPC shares sold by an individual or partnership?", yes: { title: "RPGT — RPGTA s.3", body: `e-CKHT 1A (land) or 1B (RPC shares) within 60 days, tax within 90 days. Rate by Part I / II / III and year of disposal.<div class="btns">${goBtn("rpgt", "Compute the RPGT")}</div>`, auth: "RPGTA s.3, Sch 5 · Ops Guideline 2/2026", tag: "inforce" }, no: "next" },
     { q: "Company / LLP / trust / co-op disposing of unlisted shares or a foreign asset?", yes: { title: "CGT — ITA s.4(aa)", body: `Domestic unlisted shares: e-CKM and payment within 60 days. Foreign assets: Form C (exempt with economic substance to 2030).<div class="btns">${goBtn("cgt", "Compute the CGT")}</div>`, auth: "ITA s.4(aa), s.65C · Sch 1 Part XXI", tag: "inforce" }, no: "next" }];
@@ -26,7 +26,8 @@ export function regime(el) {
     { q: "Shares held as trading stock (a share dealer)?", yes: { title: "Business income — s.4(a)", body: "Not RPGT, not CGT.", auth: "ITA s.4(a)", tag: "inforce" }, no: "next" },
     { q: "Company never an RPC while the shares were held?", hint: "RPC = land and RPC shares at market value ≥ 75% of total tangible assets.", yes: { title: "Individual: outside tax · company: CGT", body: `Individuals and partnerships of individuals: outside CGT. Company / LLP / trust / co-op: CGT 10% of gain, or 2% of gross price for shares bought before 1 Jan 2024.<div class="btns">${goBtn("cgt", "Compute the CGT")}</div>`, auth: "ITA s.4(aa) · CGT Guidelines 2025 para 1.5", tag: "inforce" }, no: "next" },
     { q: "Seller a citizen / PR individual or a partnership?", yes: { title: "RPGT Part I — para 34A · e-CKHT 1B", body: `Year 6 onwards 0%. Individuals get the Sch 4 exemption; a partnership does not.<div class="btns">${goBtn("rpgt", "Compute the RPGT")}</div>`, auth: "RPGTA Sch 2 para 34A · Sch 5 Part I", tag: "inforce" }, no: "next" },
-    { q: "Seller a non-citizen individual?", yes: { title: "RPGT Part III — 30% to year 5, then 10%", body: `Retention 7%.<div class="btns">${goBtn("rpgt", "Compute the RPGT")}</div>`, auth: "RPGTA Sch 2 para 34A · Sch 5 Part III", tag: "inforce" }, no: "next" }];
+    { q: "Seller a non-citizen individual?", yes: { title: "RPGT Part III — 30% to year 5, then 10%", body: `Retention 7%.<div class="btns">${goBtn("rpgt", "Compute the RPGT")}</div>`, auth: "RPGTA Sch 2 para 34A · Sch 5 Part III", tag: "inforce" }, no: "next" },
+    { q: "Seller a registered society, or the executor of a deceased person's estate?", hint: "Neither is a CGT chargeable person (CGT Q&A 2024 Q2).", yes: { title: "RPGT, not CGT — para 34A", body: `A society registered under the Societies Act 1966: Sch 5 Part II. Executor of a citizen's or PR's estate: Part I rates. Not CGT.<div class="btns">${goBtn("rpgt", "Compute the RPGT")}</div>`, auth: "RPGTA Sch 2 para 34A · Sch 5 Parts I–II · CGT Q&A 2024 Q2", tag: "inforce" }, no: "next" }];
   const SH_F = { title: "Company / LLP / trust / co-op — CGT 10% or 2% · e-CKM", body: `A foreign company selling Malaysian RPC shares is also within CGT (Q&A Q17).<div class="btns">${goBtn("cgt", "Compute the CGT")}</div>`, auth: "ITA s.4(aa), s.15C · CGT Q&A 2024 Q17", tag: "inforce" };
   const draw = (v) => { const old = $("#rg-tree", el); const fresh = old.cloneNode(false); old.replaceWith(fresh); v === "land" ? tree(fresh, LAND, LAND_F) : tree(fresh, SH, SH_F); };
   draw("land"); bindSeg($("#rg-seg", el), (v) => { draw(v); });
@@ -44,10 +45,12 @@ export function rpgt(el) {
       <div class="row2">${fMoney("rp-dp", "Disposal price", "1,000,000")}${fMoney("rp-dc", "Disposal costs", "20,000", "Agent, legal on sale")}</div>
       <div class="row2">${fMoney("rp-ap", "Acquisition price", "400,000", "Para 35(2) cost for a partnership")}${fMoney("rp-ac", "Acquisition costs", "12,000", "Legal, stamp duty on purchase")}</div>
       ${fMoney("rp-en", "Enhancement", "38,000", "Renovation, title defence — not quit rent, interest, repairs")}
+      ${fMoney("rp-cash", "Cash part of the price (blank = all cash)", "", "For share swaps or part-cash deals — s.21B(1)")}
     </div>
     </div>
     <div><div class="card result" id="rp-out"></div>
-    <div class="card"><h3>RPC test — is it a real property company?</h3><p class="sub">Market value of land, not book value. Intangibles excluded.</p>
+    <div class="card"><h3>RPC test — is it a real property company?</h3><p class="sub">Two conditions: a controlled company, and land at market value at least 75% of total tangible assets. Intangibles excluded.</p>
+      <label class="check" style="display:flex;gap:8px;align-items:center;margin:0 0 10px"><input type="checkbox" id="rc-ctl" checked> Controlled company (ITA meaning — ≤ 50 members and controlled by ≤ 5 persons)</label>
       ${fMoney("rc-l", "Land at market value", "8,000,000")}${fMoney("rc-s", "Shares in other RPCs (acquisition price)", "0")}${fMoney("rc-o", "Other tangible assets (cash, receivables, plant)", "2,000,000")}
       <div id="rc-out"></div>
       <h3 style="margin-top:14px">Deemed price — shares held when it became an RPC</h3><p class="sub">A ÷ B × C (para 34A(2)(a))</p>
@@ -61,7 +64,7 @@ export function rpgt(el) {
     const g = (id) => $("#" + id, el).value;
     if (!g("rp-ad") || !g("rp-dd")) return;
     if (asset === "rpc" && ["company", "llp", "trust", "foreignco"].includes(g("rp-p"))) { $("#rp-out", el).innerHTML = `<div class="verdict info"><span class="bk-coin bk-coin--paper">!</span>Not RPGT — since 1 Jan 2024 a company, LLP, trust body or co-operative selling RPC shares is within CGT, not para 34A.</div><p>Use the CGT calculator: 10% of the gain, or 2% of gross for shares bought before 2024. e-CKM within 60 days, no retention.</p><div class="btns">${goBtn("cgt", "Open the CGT calculator")}</div>${auth("inforce", "ITA s.4(aa) · CGT Guidelines 2025 para 1.5 · CGT Q&A 2024 Q17")}`; refreshIcons(); return; }
-    const r = c.rpgt({ person: g("rp-p"), asset, acqDate: g("rp-ad"), dispDate: g("rp-dd"), dispPrice: num(g("rp-dp")), dispCosts: num(g("rp-dc")), acqPrice: num(g("rp-ap")), acqCosts: num(g("rp-ac")), enhancement: num(g("rp-en")) });
+    const r = c.rpgt({ person: g("rp-p"), asset, acqDate: g("rp-ad"), dispDate: g("rp-dd"), dispPrice: num(g("rp-dp")), cash: g("rp-cash").trim() === "" ? undefined : num(g("rp-cash")), dispCosts: num(g("rp-dc")), acqPrice: num(g("rp-ap")), acqCosts: num(g("rp-ac")), enhancement: num(g("rp-en")) });
     if (c.D(g("rp-dd")) <= c.D(g("rp-ad"))) { $("#rp-out", el).innerHTML = `<div class="verdict no">Disposal date must be after the acquisition date.</div>`; return; }
     const T = c.RPGT_TABLE[r.cat], years = (c.D(g("rp-dd")) - c.D(g("rp-ad"))) / (365.25 * 864e5);
     const tl = segbar([{ w: 3, color: C.coral100, label: T[0] + "%", sub: "Years 1–3" }, { w: 1, color: C.amber100, label: T[3] + "%", sub: "Year 4" }, { w: 1, color: C.amber100, label: T[4] + "%", sub: "Year 5" }, { w: 1.5, color: C.teal100, label: T[5] + "%", sub: "Year 6 +" }],
@@ -73,25 +76,25 @@ export function rpgt(el) {
     if (r.loss) notes.push(asset === "rpc" ? "A loss on RPC shares (para 34A) is not an allowable loss — Sch 2 para 33(d)." : "Allowable loss — set it against RPGT gains (s.7).");
     if (r.person.id === "partnership") notes.push("No Sch 4 exemption for a partnership. Its cost is the partner's cost plus permitted expenses (para 35(2)), not market value at contribution.");
     if (r.cat === "I" && r.year >= 6) notes.push("0% — but still file e-CKHT within 60 days. Keep the private residence election (s.8) for a short-hold sale.");
-    notes.push("From 1 Jan 2026 the acquirer remits the lesser of: full price, the retention %, or the deemed tax the disposer notifies before remittance.");
+    notes.push(`The acquirer retains the lower of the whole of the money paid (cash part) and ${r.retPct}% of the price (s.21B(1)). From 1 Jan 2026, if the disposer notifies the deemed tax before remittance, the acquirer remits the lowest of those and the notified tax — here ${c.rm(r.remitIfNotified)} (Ops Guideline 2/2026).`);
     $("#rp-out", el).innerHTML = `<span class="label">RPGT payable</span><div class="bk-hero-num">${c.rm(r.tax)}<span class="bk-unit">${r.rate}%</span></div>
       <div class="sub">Part ${r.cat} · ${r.yearLabel} · ${esc(r.person.label)}</div>${tl}
-      <div class="kpis"><div class="kpi"><b>${c.rm(r.gain)}</b><span>Gain</span></div><div class="kpi"><b>${c.rm(r.sch4)}</b><span>Sch 4 exemption</span></div><div class="kpi"><b>${c.rm(r.retention)}</b><span>Buyer retains ${r.retPct}%</span></div>
-      <div class="kpi"><b>${r.refundable ? c.rm(r.refundable) + " refund" : c.rm(r.balance)}</b><span>${r.refundable ? "Retention exceeds tax" : "Balance to pay"}</span></div></div>
+      <div class="kpis"><div class="kpi"><b>${c.rm(r.gain)}</b><span>Gain</span></div><div class="kpi"><b>${c.rm(r.sch4)}</b><span>Sch 4 exemption</span></div><div class="kpi"><b>${c.rm(r.retention)}</b><span>Buyer retains (${r.retPct}% cap)</span></div>
+      <div class="kpi"><b>${r.refundable ? c.rm(r.refundable) + " refund" : c.rm(r.balance)}</b><span>${r.refundable ? "Retention exceeds tax — unless the deemed tax was notified" : "Balance to pay"}</span></div></div>
       ${waterfall(steps, { label: "RPGT computation" })}
       <h3 style="margin-top:14px">Deadlines</h3><div class="clocks"><div class="clock soon"><span class="d">${c.fmtDate(r.returnDue)}</span><span class="w"><b>${r.form} + acquirer's e-CKHT 2A and retention</b> — 60 days</span></div><div class="clock"><span class="d">${c.fmtDate(r.payDue)}</span><span class="w"><b>RPGT payment</b> — 90 days, even if appealed</span></div></div>
       ${notes.map((n) => `<div class="note">${n}</div>`).join("")}${auth("inforce", r.authority)}<div class="btns" id="rp-btns"></div>`;
     const b = $("#rp-btns", el);
-    b.append(copyBtn(() => `RPGT — ${r.person.label} (Part ${r.cat})\nAcquired ${g("rp-ad")} · disposed ${g("rp-dd")} · ${r.yearLabel}\nDisposal price net ${c.rm(r.dispPriceNet)}\nLess acquisition + costs + enhancement ${c.rm(r.acqPriceTotal)}\nGain ${c.rm(r.gain)}\nSch 4 exemption ${c.rm(r.sch4)}\nChargeable gain ${c.rm(r.chargeable)}\nRPGT @ ${r.rate}% ${c.rm(r.tax)}\nRetention ${r.retPct}% ${c.rm(r.retention)}\n${r.form} by ${c.fmtDate(r.returnDue)} · pay by ${c.fmtDate(r.payDue)}\nAuthority: ${r.authority}`), printBtn());
+    b.append(copyBtn(() => `RPGT — ${r.person.label} (Part ${r.cat})\nAcquired ${g("rp-ad")} · disposed ${g("rp-dd")} · ${r.yearLabel}\nDisposal price net ${c.rm(r.dispPriceNet)}\nLess acquisition + costs + enhancement ${c.rm(r.acqPriceTotal)}\nGain ${c.rm(r.gain)}\nSch 4 exemption ${c.rm(r.sch4)}\nChargeable gain ${c.rm(r.chargeable)}\nRPGT @ ${r.rate}% ${c.rm(r.tax)}\nRetention (lower of cash and ${r.retPct}%) ${c.rm(r.retention)} · remit if deemed tax notified ${c.rm(r.remitIfNotified)}\n${r.form} by ${c.fmtDate(r.returnDue)} · pay by ${c.fmtDate(r.payDue)}\nAuthority: ${r.authority}`), printBtn());
     refreshIcons();
   }
   function rpc() {
-    const t = c.rpcTest(num($("#rc-l", el).value), num($("#rc-s", el).value), num($("#rc-o", el).value));
-    $("#rc-out", el).innerHTML = `${gauge(t.ratio, 0.75, "RPC ratio")}<div class="verdict ${t.isRPC ? "no" : "ok"}">${t.isRPC ? "RPC — ratio at least 75%. Individuals and partnerships selling its shares pay RPGT under para 34A; companies, LLPs, trusts and co-ops pay CGT." : "Not an RPC at this test date."}</div><div class="sub">Status ends only on a disposal that takes the ratio below 75% — cash growth alone does not end it (para 34A(6) proviso).</div>`;
+    const t = c.rpcTest(num($("#rc-l", el).value), num($("#rc-s", el).value), num($("#rc-o", el).value), $("#rc-ctl", el).checked);
+    $("#rc-out", el).innerHTML = `${gauge(t.ratio, 0.75, "RPC ratio")}<div class="verdict ${t.isRPC ? "no" : "ok"}">${t.isRPC ? "RPC — a controlled company with the ratio at least 75%. Individuals and partnerships selling its shares pay RPGT under para 34A; companies, LLPs, trusts and co-ops pay CGT." : !t.controlled ? "Not an RPC — not a controlled company, whatever the ratio (para 34A(6))." : "Not an RPC at this test date."}</div><div class="sub">Status ends only on a disposal that takes the ratio below 75% — cash growth alone does not end it (para 34A(6) proviso).</div>`;
     $("#rc-dp", el).innerHTML = `<div class="kpi" style="margin-top:6px"><b>${c.rm(c.rpcDeemedPrice(num($("#rc-a", el).value), num($("#rc-b", el).value), num($("#rc-c", el).value)))}</b><span>Deemed acquisition price, at the date it became an RPC</span></div>`;
   }
   el.addEventListener("input", (e) => { if (e.target.id.startsWith("rc-")) rpc(); else run(); });
-  el.addEventListener("change", run);
+  el.addEventListener("change", (e) => { if (e.target.id.startsWith("rc-")) rpc(); else run(); });
   bindSeg($("#rp-seg", el), (v) => { asset = v; run(); });
   $$("[data-pre]", el).forEach((b) => b.addEventListener("click", () => { const p = P[b.dataset.pre]; ids.forEach((id, k) => { $("#" + id, el).value = typeof p[k] === "number" ? p[k].toLocaleString("en-MY") : p[k]; });
     asset = p[8]; $$("#rp-seg button", el).forEach((x) => x.setAttribute("aria-pressed", x.dataset.v === asset)); run(); }));

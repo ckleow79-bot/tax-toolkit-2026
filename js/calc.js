@@ -53,10 +53,11 @@ export function rpgt(i) {
   const rate = rpgtRate(p.cat, year);
   const tax = r2(chargeable * rate / 100);
   const retPct = retentionRate(p.cat, year);
-  const retention = r2(i.dispPrice * retPct / 100);
+  const cash = i.cash === undefined || i.cash === null || isNaN(i.cash) ? i.dispPrice : i.cash;
+  const retention = r2(Math.min(cash, i.dispPrice * retPct / 100)); // s.21B(1): lower of the whole of the money (cash part) and the %
   return {
     person: p, cat: p.cat, year, yearLabel: yearLabel(year), dispPriceNet: dispPrice, acqPriceTotal: acqPrice, gain, sch4, chargeable, rate, tax,
-    retPct, retention, balance: r2(tax - Math.min(tax, retention)), refundable: r2(Math.max(0, retention - tax)),
+    retPct, retention, remitIfNotified: r2(Math.min(retention, tax)), balance: r2(tax - Math.min(tax, retention)), refundable: r2(Math.max(0, retention - tax)),
     returnDue: addDays(disp, 60), payDue: addDays(disp, 90),
     form: i.asset === "rpc" ? "e-CKHT 1B" : "e-CKHT 1A", loss: gain < 0,
     authority: "RPGTA Sch 2 paras 4–7, Sch 4 para 2, Sch 5 Part " + p.cat + ", s.21B · Ops Guideline 2/2026",
@@ -64,10 +65,10 @@ export function rpgt(i) {
 }
 
 // ---------- RPC ----------
-export function rpcTest(landMV, rpcShares, otherTangible) {
+export function rpcTest(landMV, rpcShares, otherTangible, controlled = true) {
   const defined = landMV + rpcShares, total = defined + otherTangible;
   const ratio = total > 0 ? defined / total : 0;
-  return { defined, total, ratio, isRPC: ratio >= 0.75, authority: "RPGTA Sch 2 para 34A(6) — market value of land, intangibles excluded" };
+  return { defined, total, ratio, controlled, isRPC: controlled && ratio >= 0.75, authority: "RPGTA Sch 2 para 34A(6) — a controlled company; market value of land, intangibles excluded" };
 }
 export const rpcDeemedPrice = (A, B, C) => (B > 0 ? r2(A / B * C) : 0);
 
@@ -166,7 +167,7 @@ export function utcStamp(isoDate, hhmm = "09:00") { // MYT = UTC+8
   const [h, m] = hhmm.split(":").map(Number); const dt = new Date(D(isoDate).getTime() + (h * 60 + m - 480) * 60000);
   return dt.toISOString().replace(".000Z", "Z");
 }
-export const exposure = (count) => ({ min: count * 200, max: count * 20000, authority: "ITA s.120(1)(d) — RM200 to RM20,000 per offence" });
+export const exposure = (count) => ({ min: count * 200, max: count * 20000, authority: "ITA s.120(1)(d) — fine RM200 to RM20,000, or up to 6 months' imprisonment, or both, per offence" });
 
 // ---------- Budget 2027 ----------
 export function msme(i) {

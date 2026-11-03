@@ -61,4 +61,9 @@ const be = c.breakEven(); eq("Break-even ~1.085m (within 2k)", Math.abs(be - 108
 eq("Payroll 50", c.payroll(50).total, 118650); eq("Payroll full yr", c.payroll(50).fullYear, 203400);
 eq("MSME exactly 20% foreign passes", c.msme({ resident: true, capital: 1e6, gbi: 1e7, related: false, foreignPct: 20 }).isMSME, true);
 eq("RPC 80%", c.rpcTest(800, 0, 200).isRPC, true); eq("RPC 70%", c.rpcTest(700, 0, 300).isRPC, false);
+eq("RPC not controlled", c.rpcTest(800, 0, 200, false).isRPC, false);
+{ const base = { person: "citizen", asset: "land", acqDate: "2015-01-01", dispDate: "2026-03-01", dispPrice: 1500000, dispCosts: 0, acqPrice: 300000 };
+  eq("s.21B retention all cash = 3%", c.rpgt(base).retention, 45000);
+  eq("s.21B retention capped by cash part", c.rpgt({ ...base, cash: 20000 }).retention, 20000);
+  eq("Remit if deemed tax notified (0% disposal) = 0", c.rpgt(base).remitIfNotified, 0); }
 console.log(`\n${pass} passed, ${fail} failed`); if (fail) process.exit(1);
