@@ -1,0 +1,49 @@
+rules_version = '2';
+// Tax Compliance Toolkit 2026 — Firestore security rules.
+// Before publishing in the Firebase console, replace PRESENTER_EMAIL with the presenter account's email, in lower case (SETUP.md step C4).
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() { return request.auth != null; }
+    function presenter() { return signedIn() && request.auth.token.email == 'PRESENTER_EMAIL'; }
+    function state() { return get(/databases/$(database)/documents/control/state).data; }
+
+    // Which poll is live, and the result counts shown at reveal — read by everyone, written only by the presenter.
+    match /control/{docId} {
+      allow read: if signedIn();
+      allow write: if presenter() && docId == 'state';
+    }
+
+    // One vote per person per poll, only while that poll is open. A participant can read only their own vote.
+    match /polls/{pollId}/votes/{uid} {
+      allow read: if presenter() || (signedIn() && request.auth.uid == uid);
+      allow create, update: if signedIn() && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['choice', 'at'])
+        && request.resource.data.choice is int
+        && request.resource.data.choice >= 0 && request.resource.data.choice <= 3
+        && request.resource.data.at == request.time
+        && state().pollId == pollId && state().open == true;
+      allow delete: if presenter();
+    }
+
+    // Anonymous question wall: no author field. Anyone signed in may post, and back a question once.
+    // Only the presenter hides or deletes.
+    match /questions/{qid} {
+      allow read: if signedIn();
+      allow create: if signedIn()
+        && request.resource.data.keys().hasOnly(['text', 'at', 'up', 'hidden'])
+        && request.resource.data.text is string
+        && request.resource.data.text.size() >= 3 && request.resource.data.text.size() <= 240
+        && request.resource.data.at == request.time
+        && request.resource.data.up == [] && request.resource.data.hidden == false;
+      allow update: if presenter()
+        || (signedIn()
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['up'])
+            && !(request.auth.uid in resource.data.up)
+            && request.resource.data.up == resource.data.up.concat([request.auth.uid]));
+      allow delete: if presenter();
+    }
+
+    // Everything else is closed.
+    match /{document=**} { allow read, write: if false; }
+  }
+}
