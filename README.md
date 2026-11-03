@@ -21,4 +21,5 @@ Interactive tools for the KS Leow Tax Consultant Sdn Bhd in-house training, 7 No
 - Static site, no build step. Design: B & K Academy Design System (`ds/`, copied from the source repo unmodified).
 - Calculations live in `js/calc.js`; `node test/calc.test.js` checks them against the training deck's worked figures.
 - Live features: see `SETUP.md`. Without a Firebase config the tools still work and the Live tab says it is not connected.
+- Offline: `sw.js` caches the site after the first visit, and `manifest.webmanifest` lets phones add it to the home screen. **When you change any file, bump `CACHE` in `sw.js`** (e.g. `tct26-v1.2`) so phones pick up the update.
 - Libraries bundled in `js/vendor/` (Lucide icons, qrcode-generator) — no CDN needed except Firebase for live features.

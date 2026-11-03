@@ -12,7 +12,7 @@ export async function live(el) {
       <div class="btns"><button class="btn" id="lv-send">${icon("send")}Post question</button></div><div id="lv-list" style="margin-top:10px"></div></div></div>`;
   refreshIcons();
   const F = await fb().catch(() => null);
-  if (!F) { $("#lv-poll", el).innerHTML = `<div class="verdict info">The live session is not connected yet. All eight tools work without it.</div>`; $("#lv-send", el).disabled = true; return; }
+  if (!F) { $("#lv-poll", el).innerHTML = `<div class="verdict info">Live session not available — no internet, or not set up yet. All eight tools still work.</div>`; $("#lv-send", el).disabled = true; return; }
   const { auth, db, A, F: S } = F;
   try { if (!auth.currentUser) await A.signInAnonymously(auth); } catch (e) { $("#lv-poll", el).innerHTML = `<div class="verdict no">Could not join the live session (${esc(e.code || "network")}). Check your connection and reload.</div>`; return; }
   const uid = auth.currentUser.uid;

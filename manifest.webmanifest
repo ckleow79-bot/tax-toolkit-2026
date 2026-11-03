@@ -1,0 +1,21 @@
+{
+  "name": "Tax Compliance Toolkit 2026",
+  "short_name": "Tax Toolkit",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#FCFBF8",
+  "theme_color": "#15213B",
+  "icons": [
+    {
+      "src": "ds/assets/favicon-256.png",
+      "sizes": "256x256",
+      "type": "image/png"
+    },
+    {
+      "src": "ds/assets/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}
