@@ -28,6 +28,6 @@ const big = $("#bigtext");
 const setBig = (on) => { document.body.classList.toggle("big", on); big.setAttribute("aria-pressed", on); try { localStorage.setItem("tct26-big", on ? "1" : "0"); } catch (e) {} };
 try { setBig(localStorage.getItem("tct26-big") === "1"); } catch (e) {}
 big.addEventListener("click", () => setBig(!document.body.classList.contains("big")));
-$("#ver").textContent = " · v1.1";
+$("#ver").textContent = " · v1.2";
 if ("serviceWorker" in navigator) window.addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}));
 let rz; window.addEventListener("resize", () => { clearTimeout(rz); rz = setTimeout(() => { const s = document.querySelector(".tab.on"); const i = s && s.querySelector("input"); i && i.dispatchEvent(new Event("input", { bubbles: true })); }, 250); });

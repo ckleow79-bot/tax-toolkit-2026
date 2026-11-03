@@ -1,14 +1,11 @@
-// Paste your Firebase web app config here (Firebase console › Project settings › Your apps › Web app › SDK setup and configuration › Config).
-// Leave as null to run the toolkit without live features. See SETUP.md.
-export const firebaseConfig = null;
-
-/* Example shape — replace null above with your own values:
+// Firebase web app config for project tax-toolkit-2026 (asia-southeast1).
+// This config is meant to be public — access is controlled by the Firestore security rules (firestore.rules).
+// Set to null to run the toolkit without live features.
 export const firebaseConfig = {
-  apiKey: "…",
-  authDomain: "your-project.firebaseapp.com",
-  projectId: "your-project",
-  storageBucket: "your-project.appspot.com",
-  messagingSenderId: "…",
-  appId: "…",
+  apiKey: "AIzaSyDT9220Ly2C0glwyYd8UzJasgmkjIKOeTQ",
+  authDomain: "tax-toolkit-2026-fc234.firebaseapp.com",
+  projectId: "tax-toolkit-2026-fc234",
+  storageBucket: "tax-toolkit-2026-fc234.firebasestorage.app",
+  messagingSenderId: "370227764260",
+  appId: "1:370227764260:web:229d93842b52067ea18cb1",
 };
-*/

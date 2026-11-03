@@ -1,10 +1,11 @@
 rules_version = '2';
 // Tax Compliance Toolkit 2026 — Firestore security rules.
-// Before publishing in the Firebase console, replace PRESENTER_EMAIL with the presenter account's email, in lower case (SETUP.md step C4).
+// Before publishing in the Firebase console, replace PRESENTER_EMAIL with the presenter's Google account email, in lower case.
+// The presenter signs in with Google on presenter.html; the email must be verified.
 service cloud.firestore {
   match /databases/{database}/documents {
     function signedIn() { return request.auth != null; }
-    function presenter() { return signedIn() && request.auth.token.email == 'PRESENTER_EMAIL'; }
+    function presenter() { return signedIn() && request.auth.token.email == 'PRESENTER_EMAIL' && request.auth.token.email_verified == true; }
     function state() { return get(/databases/$(database)/documents/control/state).data; }
 
     // Which poll is live, and the result counts shown at reveal — read by everyone, written only by the presenter.

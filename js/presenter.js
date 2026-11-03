@@ -9,9 +9,10 @@ if (!F) { $("#stage").innerHTML = `<div class="verdict info">Firebase is not con
 else {
   const { auth, db, A, F: S } = F;
   let state = {}, votes = [], qs = [], view = "poll", sel = POLLS[0].id, unsub = null;
-  $("#go").onclick = async () => { try { await A.signInWithEmailAndPassword(auth, $("#em").value.trim(), $("#pw").value); } catch (e) { $("#err").textContent = "Sign-in failed: " + (e.code || e.message); } };
+  $("#go").onclick = async () => { try { await A.signInWithPopup(auth, new A.GoogleAuthProvider()); } catch (e) { $("#err").textContent = "Sign-in failed: " + (e.code || e.message); } };
   $("#out").onclick = () => A.signOut(auth);
-  A.onAuthStateChanged(auth, (u) => { const ok = u && !u.isAnonymous; $("#login").hidden = ok; $("#ctl").hidden = !ok; if (ok) start(); });
+  let started = false;
+  A.onAuthStateChanged(auth, (u) => { const ok = u && !u.isAnonymous; $("#login").hidden = ok; $("#ctl").hidden = !ok; if (ok && !started) { started = true; start(); } });
   const setState = (patch) => S.setDoc(S.doc(db, "control", "state"), { ...state, ...patch, updatedAt: S.serverTimestamp() }).catch((e) => alert("Not allowed: " + e.code));
   function list() {
     let g = "", html = "";
