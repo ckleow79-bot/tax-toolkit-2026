@@ -25,7 +25,7 @@ export function home(el) {
 
 // ================= 5. E-INVOICE =================
 const W22 = [["1", "Sdn Bhd · FY2022 RM8m", { turnover: 8e6 }], ["2", "RM2m · 30% held by a RM50m company", { turnover: 2e6, testA: true }], ["3", "Sole prop · two shops RM1.8m + RM1.5m in YA2026", { turnover: 0, reachedYA: 2026 }],
-  ["4", "LLP RM600k · same individual partners as a RM4m LLP", { turnover: 600000 }], ["5", "New subsidiary of a listed group · starts 1 Feb 2027", { turnover: 0, testB: true, commence: "2027-02-01" }], ["6", "Independent Sdn Bhd RM2.5m", { turnover: 2.5e6 }]];
+  ["4", "LLP RM600k · same individual partners as a RM4m LLP", { turnover: 600000 }], ["5", "New subsidiary of a listed group · starts 1 Feb 2027", { turnover: 0, testB: true, commence: "2027-02-01" }], ["6", "Independent Sdn Bhd RM2.5m · rents from an individual", { turnover: 2.5e6 }]];
 const ITEMS = [
   ["Rent to an individual landlord not in business", "Tenant self-bills — transactional where a single payment exceeds RM10,000 (from 1 Jan 2026). A tenant still inside its relaxation period (e.g. Phase 4 to 31 Dec 2027) may consolidate.", "SG 8.3(f), 3.6.5(a), 16.2, Ex 14, Table 3.6 item 7 · FAQ Q62"],
   ["Utilities in the landlord's name, paid by the tenant", "Include them in the tenant's self-billed e-Invoice (landlord not in business)", "FAQ Q63"],
@@ -43,9 +43,9 @@ const ITEMS = [
 export function einv(el) {
   el.innerHTML = `<div class="head"><span class="bk-eyebrow"><span class="bk-chev"></span>Tool 5 · Sessions 2.1–2.3</span><h2>e-Invoice — start date and who issues</h2>
     <p class="lead">Fix the start date from FY2022 turnover, the RM3m floor and the three anti-fragmentation tests. Then find who issues for any transaction.</p></div>
-    ${seg("ei-seg", [["start", "Start date"], ["who", "Who issues?"]], "start")}<div id="ei-body"></div>`;
+    ${seg("ei-seg", [["start", "Start date"], ["who", "Who issues?"]], "start", "e-Invoice question")}<div id="ei-body"></div>`;
   const views = {
-    start: (b) => { b.innerHTML = `<div class="grid two"><div class="card"><p class="sub" style="margin-top:0">Worksheet W2.2 — tap a client profile to load it</p><div class="field"><select id="ei-w"><option value="">Choose W2.2 profile…</option>${W22.map(([n, l]) => `<option value="${n}">#${n} · ${esc(l)}</option>`).join("")}</select></div><div class="sub" id="ei-wl"></div>
+    start: (b) => { b.innerHTML = `<div class="grid two"><div class="card"><p class="sub" style="margin-top:0">Worksheet W2.2 — tap a client profile to load it</p><div class="field"><label for="ei-w" class="sr-only">W2.2 client profile</label><select id="ei-w"><option value="">Choose W2.2 profile…</option>${W22.map(([n, l]) => `<option value="${n}">#${n} · ${esc(l)}</option>`).join("")}</select></div><div class="sub" id="ei-wl"></div>
         ${fMoney("ei-t", "FY2022 turnover (audited, else YA2022 return)", "2,000,000", "Sole proprietor: add every business. Pro-rate a changed year-end. New business: enter 0.")}
         ${fSw("ei-a", "(a) Any non-individual shareholder with revenue ≥ RM3m?", true)}${fSw("ei-b", "(b) Subsidiary of a holding company with revenue ≥ RM3m?")}${fSw("ei-c", "(c) Related company or JV (20% or control) with revenue ≥ RM3m?")}
         ${fSel("ei-y", "Reached RM3m in a later YA?", [["", "No"], ["2023", "YA2023"], ["2024", "YA2024"], ["2025", "YA2025"], ["2026", "YA2026"], ["2027", "YA2027"]], "")}
@@ -147,7 +147,7 @@ export function svdp(el) {
 export function budget(el) {
   el.innerHTML = `<div class="head"><span class="bk-eyebrow"><span class="bk-chev"></span>Tool 7 · Session 3</span><h2>Budget 2027 — what it means for the client</h2>
     <p class="lead">Every figure here is <span class="tag proposed">PROPOSED</span> until the Finance Act is gazetted. Use it for planning conversations, not filing.</p></div>
-    ${seg("bg-seg", [["msme", "MSME test"], ["co", "Company tax"], ["ind", "Individual tax"], ["pay", "Payroll"]], "msme")}<div id="bg-body"></div>`;
+    ${seg("bg-seg", [["msme", "MSME test"], ["co", "Company tax"], ["ind", "Individual tax"], ["pay", "Payroll"]], "msme", "Budget topic")}<div id="bg-body"></div>`;
   const views = {
     msme: (b) => { b.innerHTML = `<div class="grid two"><div class="card">${fSw("ms-r", "Resident, and incorporated (company) or registered (LLP) in Malaysia", true)}
         ${fMoney("ms-c", "Paid-up capital (LLP: contribution) at the start of the basis period", "1,000,000")}${fMoney("ms-g", "Gross business income for the basis period", "12,000,000")}

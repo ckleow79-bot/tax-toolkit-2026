@@ -8,7 +8,7 @@ const goBtn = (tab, label) => `<button class="btn" data-goto="${tab}">${icon("ar
 export function regime(el) {
   el.innerHTML = `<div class="head"><span class="bk-eyebrow"><span class="bk-chev"></span>Tool 1 · Session 1.0</span><h2>Which regime applies?</h2>
     <p class="lead">Answer the questions in order. The path lights up and lands on the regime — with the authority to quote in your regime memo.</p></div>
-    ${seg("rg-seg", [["land", "Land or property"], ["shares", "Shares in a company with land"]], "land")}
+    ${seg("rg-seg", [["land", "Land or property"], ["shares", "Shares in a company with land"]], "land", "Asset type")}
     <div class="grid two"><div class="card" id="rg-tree"></div>
     <div class="card"><h3>Why order matters</h3><ul class="bk-list"><li>A trading gain is never RPGT — RPGTA s.2 'gain' excludes income-taxable gains, so the s.4(a) question comes first.</li>
     <li>An RPGT clearance does not close the s.4(a) question — <i>KPHDN v Kristal Penaga</i> (HC, July 2026).</li><li>Compulsory acquisition is not a sale — <i>Wiramuda</i> (FC 2023); <i>Lush Development</i> (CA, 19 Oct 2026) applies it to closed years.</li>
@@ -36,7 +36,7 @@ export function regime(el) {
 export function rpgt(el) {
   el.innerHTML = `<div class="head"><span class="bk-eyebrow"><span class="bk-chev"></span>Tool 2 · Sessions 1.1–1.2</span><h2>RPGT calculator</h2>
     <p class="lead">Rate by Schedule 5 Part and year of disposal, Sch 4 exemption, the 3 / 5 / 7% retention and both deadlines — with the computation drawn out.</p></div>
-    ${seg("rp-seg", [["land", "Land / property"], ["rpc", "RPC shares"]], "land")}
+    ${seg("rp-seg", [["land", "Land / property"], ["rpc", "RPC shares"]], "land", "Asset type")}
     <div class="grid two"><div><div class="card">${WARN}
       <div class="btns" style="margin:0 0 14px"><button class="btn ghost" data-pre="a2">Keluarga Tan · Asset 2</button><button class="btn ghost" data-pre="a3">Asset 3 · Wei Ming</button><button class="btn ghost" data-pre="s53">Sdn Bhd shop lot</button></div>
       ${fSel("rp-p", "Disposer", c.RPGT_PERSONS.map((p) => [p.id, `${p.label} — Part ${p.cat}`]), "partnership")}
@@ -110,11 +110,12 @@ export function cgt(el) {
       <div class="row2">${fMoney("cg-dc", "Disposal costs", "15,000", "Incidental costs of disposal and defending title")}${fMoney("cg-ap", "Acquisition price + costs", "501,500", "Include incidental costs of acquisition and enhancement")}</div>
       <div class="note">Connected persons, gifts or non-arm's-length: market value applies — LHDN accepts NTA (s.65E(8); Q&A Q12, Q23).</div></div>
     <div class="card result" id="cg-out"></div></div>`;
-  const P = { a3: ["llp", "2023-06-15", "2026-08-01", 2400000, 15000, 501500], kc: ["company", "2019-05-01", "2026-05-01", 3000000, 0, 1000000] };
+  const P = { a3: ["llp", "2018-01-01", "2026-08-01", 2400000, 15000, 501500], kc: ["company", "2019-05-01", "2026-05-01", 3000000, 0, 1000000] };
   function run() {
     const g = (id) => $("#" + id, el).value;
     const r = c.cgt({ person: g("cg-p"), acqDate: g("cg-ad"), dispDate: g("cg-dd"), consideration: num(g("cg-g")), dispCosts: num(g("cg-dc")), acqPrice: num(g("cg-ap")) });
     const out = $("#cg-out", el);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(g("cg-ad")) || !/^\d{4}-\d{2}-\d{2}$/.test(g("cg-dd"))) { out.innerHTML = `<div class="verdict info">Enter both the acquisition date and the disposal date.</div>`; return; }
     if (!r.inside) { out.innerHTML = `<div class="verdict info"><span class="bk-coin bk-coin--paper">!</span>Outside CGT — individuals, sole proprietors and partnerships of individuals are not chargeable persons.</div><p>If the company is an RPC, the sale is RPGT under para 34A instead.</p><div class="btns">${goBtn("rpgt", "Check RPGT")}</div>${auth("inforce", "ITA s.4(aa) · CGT Guidelines 2025 para 4 · Q&A Q2")}`; refreshIcons(); return; }
     if (r.badDates) { out.innerHTML = `<div class="verdict no">Disposal date must be after the acquisition date.</div>`; return; }
     if (r.preCGT) { out.innerHTML = `<div class="verdict info">Disposal before 1 Jan 2024 — not within CGT (CGT applies to disposals from 1 Jan 2024).</div>${auth("inforce", "Finance (No. 2) Act 2023 · CGT Guidelines 2025 para 1.2")}`; return; }
@@ -126,9 +127,9 @@ export function cgt(el) {
       <div class="sub">${r.preAcq ? "Acquired before 1 Jan 2024 — you may elect 2% of gross" : "Acquired on or after 1 Jan 2024 — 10% of chargeable income only"}</div>
       ${columns(bars, { label: "CGT options compared" })}
       ${r.opt2 !== null ? `<h3>Where the lines cross</h3><p class="sub">Tax as % of price. Your gain is <b>${pct(gainPct, 1)}</b> of the price — above 20%, elect 2%.</p>${lines([{ color: C.blue, points: pts10 }, { color: C.teal, points: pts2, dash: true }], { label: "Break-even chart", xfmt: (v) => v + "%", yfmt: (v) => v.toFixed(1) + "%", markers: [{ x: 20, label: "20% break-even", color: C.muted }, { x: Math.min(60, gainPct * 100), label: "You", color: C.coral }] })}<div class="legend"><span><i style="background:var(--bk-blue)"></i>10% of gain</span><span><i style="background:var(--bk-teal)"></i>2% of gross</span></div>` : ""}
-      <div class="kpis"><div class="kpi"><b>${c.rm(r.gain)}</b><span>Gain</span></div><div class="kpi"><b>${c.fmtDate(r.due)}</b><span>e-CKM and payment — 60 days</span></div><div class="kpi"><b>None</b><span>Retention under CGT</span></div></div>
+      <div class="kpis"><div class="kpi"><b>${c.rm(r.gain)}</b><span>Gain</span></div><div class="kpi"><b>${r.due && !isNaN(r.due) ? c.fmtDate(r.due) : "—"}</b><span>e-CKM and payment — 60 days</span></div><div class="kpi"><b>None</b><span>Retention under CGT</span></div></div>
       <div class="note">Losses: same-year set-off against CGT gains, then 10 YAs — never against business income (s.65E(5)–(6)).</div>${auth("inforce", r.authority)}<div class="btns" id="cg-b"></div>`;
-    $("#cg-b", el).append(copyBtn(() => `CGT — ${r.person.label}\nAcquired ${g("cg-ad")} · disposed ${g("cg-dd")}\nGain ${c.rm(r.gain)}\nOption 10% of gain ${c.rm(r.opt10)}${r.opt2 !== null ? `\nOption 2% of gross ${c.rm(r.opt2)}` : ""}\nCGT ${c.rm(r.tax)} (${r.best})\ne-CKM and payment by ${c.fmtDate(r.due)}\nAuthority: ${r.authority}`), printBtn());
+    $("#cg-b", el).append(copyBtn(() => `CGT — ${r.person.label}\nAcquired ${g("cg-ad")} · disposed ${g("cg-dd")}\nGain ${c.rm(r.gain)}\nOption 10% of gain ${c.rm(r.opt10)}${r.opt2 !== null ? `\nOption 2% of gross ${c.rm(r.opt2)}` : ""}\nCGT ${c.rm(r.tax)} (${r.best})\ne-CKM and payment by ${r.due && !isNaN(r.due) ? c.fmtDate(r.due) : "—"}\nAuthority: ${r.authority}`), printBtn());
     refreshIcons();
   }
   el.addEventListener("input", run); el.addEventListener("change", run);
@@ -140,7 +141,7 @@ export function cgt(el) {
 export function stamp(el) {
   el.innerHTML = `<div class="head"><span class="bk-eyebrow"><span class="bk-chev"></span>Tool 4 · Session 1.4</span><h2>Stamp duty calculator</h2>
     <p class="lead">Property bands, reliefs, share transfers, loans and the s.47A late-stamping ladder — each drawn so you can see where the duty comes from.</p></div>
-    ${seg("sd-seg", [["prop", "Property transfer"], ["shares", "Share transfer"], ["loan", "Loan"], ["late", "Late stamping"]], "prop")}
+    ${seg("sd-seg", [["prop", "Property transfer"], ["shares", "Share transfer"], ["loan", "Loan"], ["late", "Late stamping"]], "prop", "Stamp duty topic")}
     <div id="sd-body"></div>`;
   const views = {
     prop: (body) => { body.innerHTML = `<div class="grid two"><div class="card">${WARN}${fMoney("sp-p", "Price", "1,000,000")}${fMoney("sp-m", "Market value", "0", "Duty on the greater of price or value")}

@@ -22,7 +22,7 @@ export const fSel = (id, label, opts, val, hint = "") => `<div class="field"><la
 export const fSw = (id, label, on = false) => `<div class="toggle"><span id="${id}-l">${label}</span><button class="sw" id="${id}" role="switch" aria-checked="${on}" aria-labelledby="${id}-l"></button></div>`;
 export const swOn = (el) => el.getAttribute("aria-checked") === "true";
 export function bindSw(root, cb) { $$(".sw", root).forEach((b) => b.addEventListener("click", () => { b.setAttribute("aria-checked", !swOn(b)); cb(); })); }
-export function seg(id, opts, val) { return `<div class="seg" id="${id}" role="group">${opts.map(([v, l]) => `<button data-v="${v}" aria-pressed="${v === val}">${esc(l)}</button>`).join("")}</div>`; }
+export function seg(id, opts, val, label = "Choose a view") { return `<div class="seg" id="${id}" role="group" aria-label="${esc(label)}">${opts.map(([v, l]) => `<button data-v="${v}" aria-pressed="${v === val}">${esc(l)}</button>`).join("")}</div>`; }
 export function bindSeg(el, cb) { el.addEventListener("click", (e) => { const b = e.target.closest("button"); if (!b) return; $$("button", el).forEach((x) => x.setAttribute("aria-pressed", x === b)); cb(b.dataset.v); }); }
 export const segVal = (el) => $("button[aria-pressed=true]", el).dataset.v;
 

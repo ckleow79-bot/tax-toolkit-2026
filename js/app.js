@@ -11,7 +11,7 @@ nav.innerHTML = `<button role="tab" data-t="home"><span class="n">${icon("home")
   TOOLS.map(([id, n, , , t]) => `<button role="tab" data-t="${id}"><span class="n">${n}</span>${t.replace(" calculator", "").replace("e-Invoice start & who issues", "e-Invoice")}</button>`).join("");
 
 function show(id) {
-  if (!BUILD[id]) id = "home";
+  if (!Object.hasOwn(BUILD, id)) id = "home";
   $$(".tab").forEach((s) => s.classList.toggle("on", s.id === "t-" + id));
   $$("#nav button").forEach((b) => b.setAttribute("aria-selected", b.dataset.t === id));
   if (!built.has(id)) { built.add(id); try { BUILD[id]($("#t-" + id)); } catch (e) { console.error(e); $("#t-" + id).innerHTML = `<div class="verdict no">This tool could not load. Please reload the page.</div>`; } }
@@ -28,6 +28,6 @@ const big = $("#bigtext");
 const setBig = (on) => { document.body.classList.toggle("big", on); big.setAttribute("aria-pressed", on); try { localStorage.setItem("tct26-big", on ? "1" : "0"); } catch (e) {} };
 try { setBig(localStorage.getItem("tct26-big") === "1"); } catch (e) {}
 big.addEventListener("click", () => setBig(!document.body.classList.contains("big")));
-$("#ver").textContent = " · v1.2";
+$("#ver").textContent = " · v1.3";
 if ("serviceWorker" in navigator) window.addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}));
 let rz; window.addEventListener("resize", () => { clearTimeout(rz); rz = setTimeout(() => { const s = document.querySelector(".tab.on"); const i = s && s.querySelector("input"); i && i.dispatchEvent(new Event("input", { bubbles: true })); }, 250); });

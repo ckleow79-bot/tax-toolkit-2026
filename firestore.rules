@@ -7,6 +7,7 @@ service cloud.firestore {
     function signedIn() { return request.auth != null; }
     function presenter() { return signedIn() && request.auth.token.email == 'PRESENTER_EMAIL' && request.auth.token.email_verified == true; }
     function state() { return get(/databases/$(database)/documents/control/state).data; }
+    function wallOpen() { return state().get('wall', false) == true; }
 
     // Which poll is live, and the result counts shown at reveal — read by everyone, written only by the presenter.
     match /control/{docId} {
@@ -20,24 +21,27 @@ service cloud.firestore {
       allow create, update: if signedIn() && request.auth.uid == uid
         && request.resource.data.keys().hasOnly(['choice', 'at'])
         && request.resource.data.choice is int
-        && request.resource.data.choice >= 0 && request.resource.data.choice <= 3
+        && request.resource.data.choice >= 0 && request.resource.data.choice < state().get('n', 4)
         && request.resource.data.at == request.time
         && state().pollId == pollId && state().open == true;
       allow delete: if presenter();
     }
 
-    // Anonymous question wall: no author field. Anyone signed in may post, and back a question once.
-    // Only the presenter hides or deletes.
+    // Anonymous question wall: no author field. While the presenter has the wall open, anyone signed in
+    // may post, and back a question once. Hidden questions are readable only by the presenter.
+    // Only the presenter hides or deletes. Document IDs must be Firestore auto-IDs (20 letters/digits).
     match /questions/{qid} {
-      allow read: if signedIn();
-      allow create: if signedIn()
+      allow read: if presenter() || (signedIn() && resource.data.hidden == false);
+      allow create: if signedIn() && wallOpen()
+        && qid.matches('^[A-Za-z0-9]{20}$')
         && request.resource.data.keys().hasOnly(['text', 'at', 'up', 'hidden'])
         && request.resource.data.text is string
         && request.resource.data.text.size() >= 3 && request.resource.data.text.size() <= 240
+        && request.resource.data.text.matches('(?s).*\\S.*')
         && request.resource.data.at == request.time
         && request.resource.data.up == [] && request.resource.data.hidden == false;
       allow update: if presenter()
-        || (signedIn()
+        || (signedIn() && wallOpen() && resource.data.hidden == false
             && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['up'])
             && !(request.auth.uid in resource.data.up)
             && request.resource.data.up == resource.data.up.concat([request.auth.uid]));

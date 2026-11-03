@@ -1,5 +1,5 @@
 // Offline cache — the eight tools work after the first visit, even without signal. Live polls still need internet.
-const CACHE = "tct26-v1.2";
+const CACHE = "tct26-v1.3";
 const FILES = [
 "./",
 "./css/app.css",
@@ -51,14 +51,21 @@ const FILES = [
 "./manifest.webmanifest",
 "./presenter.html"
 ];
-self.addEventListener("install", (e) => { e.waitUntil(caches.open(CACHE).then((c) => c.addAll(FILES)).then(() => self.skipWaiting())); });
+self.addEventListener("install", (e) => { e.waitUntil(caches.open(CACHE).then((c) => c.addAll(FILES.map((f) => new Request(f, { cache: "reload" })))).then(() => self.skipWaiting())); });
 self.addEventListener("activate", (e) => { e.waitUntil(caches.keys().then((ks) => Promise.all(ks.filter((k) => k !== CACHE).map((k) => caches.delete(k)))).then(() => self.clients.claim())); });
+// Pages, scripts and styles: network first (3-second limit), so a same-day fix reaches phones on the next load; cache if offline.
+// Fonts and images: cache first. Firebase and anything cross-origin go straight to the network.
 self.addEventListener("fetch", (e) => {
   const u = new URL(e.request.url);
-  if (e.request.method !== "GET" || u.origin !== location.origin) return; // Firebase and fonts go to the network
+  if (e.request.method !== "GET" || u.origin !== location.origin) return;
+  const code = e.request.mode === "navigate" || /\.(html|js|css|webmanifest)$/.test(u.pathname) || u.pathname.endsWith("/");
   e.respondWith(caches.open(CACHE).then(async (c) => {
-    const hit = await c.match(e.request, { ignoreSearch: true });
-    const net = fetch(e.request).then((r) => { if (r.ok) c.put(e.request, r.clone()); return r; }).catch(() => hit);
-    return hit || net; // stale-while-revalidate: fast and offline-safe; updates arrive on the next load
+    const hit = () => c.match(e.request, { ignoreSearch: true });
+    const net = () => fetch(e.request, { cache: "no-cache" }).then((r) => { if (r.ok) c.put(e.request, r.clone()); return r; });
+    if (!code) return (await hit()) || net();
+    const timeout = new Promise((res) => setTimeout(res, 3000));
+    const fresh = net().catch(() => null);
+    const r = await Promise.race([fresh, timeout]);
+    return r || (await hit()) || (await fresh) || Response.error();
   }));
 });

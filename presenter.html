@@ -21,6 +21,12 @@
   .qr { background: #fff; border-radius: var(--r-md); padding: 12px; display: inline-block; }
   .count { font-family: var(--font-mono); font-size: 18px; color: var(--text-muted); }
   .top-q { font-size: 22px; padding: 14px 0; border-bottom: 1px solid var(--border-soft); display: flex; gap: 16px; }
+  .top-q span { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+  .mod { max-height: 40vh; overflow-y: auto; margin-top: 6px; }
+  .mq { padding: 8px 0; border-bottom: 1px solid var(--border-soft); font-size: 14px; display: grid; gap: 4px; }
+  .mq span { overflow-wrap: anywhere; } .mq small { color: var(--text-muted); font-family: var(--font-mono); } .mq.hid span { color: var(--text-muted); text-decoration: line-through; }
+  .mq div { display: flex; gap: 6px; }
+  #msg:empty { display: none; } #msg { margin-bottom: 12px; }
   .top-q b { font-family: var(--font-mono); color: var(--bk-blue); min-width: 40px; }
 </style>
 </head>
@@ -32,14 +38,17 @@
       <button class="btn" id="go">Sign in with Google</button><p class="sub" id="err"></p>
     </div>
     <div class="panel" id="ctl" hidden>
-      <div style="display:flex;justify-content:space-between;align-items:center"><b>Controls</b><button class="iconbtn" id="out">Sign out</button></div>
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><b>Controls</b><button class="iconbtn" id="out">Sign out</button></div>
+      <p class="sub" style="margin:4px 0 0">Signed in as <b id="who"></b></p>
       <div class="ctl"><button class="btn" id="open">Open</button><button class="btn ghost" id="close">Close</button><button class="btn ghost" id="reveal">Reveal</button><button class="btn ghost" id="hide">Hide</button></div>
       <div class="ctl"><button class="btn ghost" id="view-poll">Show poll</button><button class="btn ghost" id="view-q">Show questions</button><button class="btn ghost" id="view-qr">Show join QR</button></div>
-      <div class="ctl"><button class="btn ghost" id="reset">Clear votes on this poll</button></div>
+      <div class="ctl"><button class="btn ghost" id="reset">Clear votes on this poll</button><button class="btn ghost" id="wall" aria-pressed="false">Question wall</button></div>
       <div class="plist" id="plist"></div>
+      <h4 style="font-size:12px;text-transform:uppercase;letter-spacing:.1em;color:var(--text-muted);font-family:var(--font-body);margin:16px 0 0">Moderate questions (newest first — not projected)</h4>
+      <div class="mod" id="mod"></div>
     </div>
   </div>
-  <div class="stage" id="stage"><p class="sub">Sign in to start.</p></div>
+  <div><div id="msg" aria-live="assertive"></div><div class="stage" id="stage"><p class="sub">Sign in to start.</p></div></div>
 </div>
 <script src="js/vendor/qrcode.js"></script>
 <script type="module" src="js/presenter.js"></script>
