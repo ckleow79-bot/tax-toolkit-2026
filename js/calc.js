@@ -172,7 +172,10 @@ export function einvStart(i) {
   }
   steps.push("new");
   const fy = i.firstYear;
-  if (fy !== null && fy !== undefined && fy >= 3e6) { // GL v4.8 para 1.5 — new business with first-year turnover of RM3m or more
+  let note = null;
+  if (fy !== null && fy !== undefined && fy >= 3e6 && i.turnover > 0) note = "First-year turnover not used — the business had FY2022 revenue, so its date follows FY2022 turnover and the three tests (GL v4.8 para 1.5 is for new businesses).";
+  else if (fy !== null && fy !== undefined && fy >= 3e6 && i.commence && D(i.commence).getUTCFullYear() < 2023) note = "First-year turnover not used — a business that commenced before 2023 is placed by its FY2022 turnover; enter that figure instead.";
+  if (fy !== null && fy !== undefined && fy >= 3e6 && !note) { // GL v4.8 para 1.5 — new business with first-year turnover of RM3m or more
     if (!i.commence) return { phase: null, start: null, missing: true, why: "First-year turnover is RM3m or more — enter the commencement date to apply the new-business rule (GL v4.8 para 1.5).", path: steps };
     const cy = D(i.commence).getUTCFullYear();
     if (cy >= 2023 && cy <= 2025) return { phase: null, start: "2026-07-01", newBiz: true, why: `New business commenced in ${cy} with first-year turnover of RM3m or more — 1 Jul 2026 (GL v4.8 para 1.5)`, path: steps };
@@ -180,11 +183,11 @@ export function einvStart(i) {
   }
   steps.push("grow");
   if (i.reachedYA) {
-    if (i.reachedYA <= 2025) return { phase: PHASES[4], start: "2026-07-01", why: `Reached RM3m in YA${i.reachedYA} (YA2023–YA2025) — 1 Jul 2026`, path: steps };
+    if (i.reachedYA <= 2025) return { phase: PHASES[4], start: "2026-07-01", why: `Reached RM3m in YA${i.reachedYA} (YA2023–YA2025) — 1 Jul 2026`, path: steps, note };
     const s = `${i.reachedYA + 2}-01-01`;
-    return { phase: null, start: s, why: `Reached RM3m in YA${i.reachedYA} — 1 January of the second year after: ${fmtDate(D(s))}`, path: steps };
+    return { phase: null, start: s, why: `Reached RM3m in YA${i.reachedYA} — 1 January of the second year after: ${fmtDate(D(s))}`, path: steps, note };
   }
-  return { phase: null, start: null, exempt: true, why: "Below RM3m and passes all three tests — exempt; may stop issuing, no application (FAQ Q15–Q20)", path: steps };
+  return { phase: null, start: null, exempt: true, why: "Below RM3m and passes all three tests — exempt; may stop issuing, no application (FAQ Q15–Q20)", path: steps, note };
 }
 
 // ---------- SVDP ----------

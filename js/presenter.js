@@ -3,6 +3,7 @@
 //   presenter.html?stage   projector window: the stage only — the LIVE poll (never a preview), the join QR,
 //                          or the questions Keith has approved. View mode and approvals sync from the control
 //                          window through localStorage (same browser), so nothing extra is written to Firestore.
+import { cleanQ } from "./live.js";
 import { fb } from "./firebase.js";
 import { POLLS, pollById } from "./polls.js";
 import { $, $$, esc } from "./ui.js";
@@ -26,7 +27,11 @@ function loadLocal() {
 let local = loadLocal();
 const bc = typeof BroadcastChannel === "function" ? new BroadcastChannel(LS) : null;
 function saveLocal() { try { localStorage.setItem(LS, JSON.stringify(local)); } catch (e) {} try { bc && bc.postMessage(local); } catch (e) {} }
-const approved = (id) => local.approved.includes(id);
+// An approval is tied to the question's ID AND creation time, so a deleted question re-created under the same ID
+// (possible from a participant's dev tools while the wall is open) is never projected without a fresh approval.
+const akey = (q) => q.id + "@" + (q.at && q.at.toMillis ? q.at.toMillis() : typeof q.at === "number" ? q.at : "x");
+const approved = (q) => local.approved.includes(akey(q));
+const unapprove = (id) => { local.approved = local.approved.filter((x) => !x.startsWith(id + "@")); saveLocal(); };
 
 if (STAGE) { document.body.classList.add("stage-mode"); document.title = "Projector · Tax Compliance Toolkit 2026"; }
 
@@ -65,8 +70,8 @@ else {
     return `<div class="st-join"><span class="bk-eyebrow"><span class="bk-chev"></span>Join the live session</span><h2>Scan to join</h2><div class="qr qr-big">${qrSvg()}</div><p class="mono st-url">${esc(SHORT)}</p><p class="st-sub">Scan with your phone camera — polls and the question wall open on your phone.</p></div>`;
   }
   function questionsScreen() {
-    const items = qs.filter((q) => !q.hidden && approved(q.id)).sort((a, b) => upN(b) - upN(a) || ts(a) - ts(b)).slice(0, 8);
-    return `<span class="bk-eyebrow"><span class="bk-chev"></span>Question wall</span><h2>Top questions</h2>${items.map((q) => `<div class="top-q"><b>▲${upN(q)}</b><span>${esc(q.text)}</span></div>`).join("") || "<p class='st-sub'>Questions appear here once Keith has read them.</p>"}`;
+    const items = qs.filter((q) => !q.hidden && approved(q)).sort((a, b) => upN(b) - upN(a) || ts(a) - ts(b)).slice(0, 8);
+    return `<span class="bk-eyebrow"><span class="bk-chev"></span>Question wall</span><h2>Top questions</h2>${items.map((q) => `<div class="top-q"><b>▲${upN(q)}</b><span>${esc(cleanQ(q.text))}</span></div>`).join("") || "<p class='st-sub'>Questions appear here once Keith has read them.</p>"}`;
   }
   function pollScreen(p, live, votes) {
     const showRes = live && state.reveal;
@@ -118,7 +123,7 @@ else {
     const p = pollById(sel), live = state.pollId ? pollById(state.pollId) : null, selLive = live && live.id === sel;
     const nxt = nextPoll(live ? live.id : sel);
     // what is on the projector
-    const where = local.view === "qr" ? "Join QR" : local.view === "q" ? `Top questions — ${plural(qs.filter((q) => !q.hidden && approved(q.id)).length, "approved question")}` :
+    const where = local.view === "qr" ? "Join QR" : local.view === "q" ? `Top questions — ${plural(qs.filter((q) => !q.hidden && approved(q)).length, "approved question")}` :
       live ? `${short(live)} · ${state.open ? "poll OPEN" : state.reveal ? "results shown" : "poll closed"} · ${plural(liveVotes.length, "answer")}` : "Join screen (no live poll)";
     $("#now").innerHTML = `<span class="lbl">On the projector now</span><b>${esc(where)}</b>${live && local.view !== "poll" ? `<br><span class="sub">Live poll ${esc(short(live))} is ${state.open ? "open on phones" : state.reveal ? "showing results on phones" : "closed"}.</span>` : ""}`;
     // the next logical step gets the solid button: Open → Reveal → Next poll
@@ -143,26 +148,26 @@ else {
     $$("#plist button").forEach((b) => (b.onclick = () => select(b.dataset.id)));
     $("#wall").textContent = state.wall ? "Question wall: OPEN — tap to close" : "Question wall: closed — tap to open";
     $("#wall").setAttribute("aria-pressed", String(!!state.wall));
-    const pend = qs.filter((q) => !q.hidden && !approved(q.id)).length;
+    const pend = qs.filter((q) => !q.hidden && !approved(q)).length;
     $("#badge").textContent = pend ? `${pend} new` : "";
     $("#tab-polls").setAttribute("aria-selected", String(tab === "polls")); $("#tab-qs").setAttribute("aria-selected", String(tab === "qs"));
     $("#pane-polls").hidden = tab !== "polls"; $("#pane-qs").hidden = tab !== "qs";
   }
   // Moderation: to review (newest first), approved, hidden.
   function modList() {
-    const pend = qs.filter((q) => !q.hidden && !approved(q.id)).sort((a, b) => ts(b) - ts(a));
-    const appr = qs.filter((q) => !q.hidden && approved(q.id)).sort((a, b) => upN(b) - upN(a));
+    const pend = qs.filter((q) => !q.hidden && !approved(q)).sort((a, b) => ts(b) - ts(a));
+    const appr = qs.filter((q) => !q.hidden && approved(q)).sort((a, b) => upN(b) - upN(a));
     const hid = qs.filter((q) => q.hidden).sort((a, b) => ts(b) - ts(a));
-    const item = (q, kind) => `<div class="mq${kind === "new" ? " new" : kind === "hid" ? " hid" : ""}"><span>${esc(q.text)}</span><small>▲${upN(q)}${kind === "hid" ? " · hidden from phones" : kind === "ok" ? " · approved for the projector" : " · new"}</small><div>${
+    const item = (q, kind) => `<div class="mq${kind === "new" ? " new" : kind === "hid" ? " hid" : ""}"><span>${esc(cleanQ(q.text))}</span><small>▲${upN(q)}${kind === "hid" ? " · hidden from phones" : kind === "ok" ? " · approved for the projector" : " · new"}</small><div>${
       kind === "new" ? `<button class="iconbtn ok" data-ok="${esc(q.id)}">Approve</button>` : kind === "ok" ? `<button class="iconbtn" data-unok="${esc(q.id)}">Unapprove</button>` : ""}<button class="iconbtn" data-hide="${esc(q.id)}" data-to="${kind === "hid" ? "0" : "1"}">${kind === "hid" ? "Unhide" : "Hide"}</button><button class="iconbtn" data-del="${esc(q.id)}">Delete</button></div></div>`;
     $("#mod").innerHTML = !qs.length ? `<p class="sub">No questions yet.</p>` :
       `<div class="h4">${pend.length ? `${pend.length} new — review` : "Nothing new to review"}</div>${pend.map((q) => item(q, "new")).join("")}` +
       (appr.length ? `<div class="h4">Approved for the projector (${appr.length})</div>${appr.map((q) => item(q, "ok")).join("")}` : "") +
       (hid.length ? `<div class="h4">Hidden (${hid.length})</div>${hid.map((q) => item(q, "hid")).join("")}` : "");
-    $$("#mod [data-ok]").forEach((b) => (b.onclick = () => { if (!approved(b.dataset.ok)) local.approved.push(b.dataset.ok); saveLocal(); paint(); }));
-    $$("#mod [data-unok]").forEach((b) => (b.onclick = () => { local.approved = local.approved.filter((x) => x !== b.dataset.unok); saveLocal(); paint(); }));
-    $$("#mod [data-hide]").forEach((b) => (b.onclick = () => { const hide = b.dataset.to === "1"; if (hide) { local.approved = local.approved.filter((x) => x !== b.dataset.hide); saveLocal(); } S.updateDoc(S.doc(db, "questions", b.dataset.hide), { hidden: hide }).catch(denied); }));
-    $$("#mod [data-del]").forEach((b) => (b.onclick = () => { if (confirm("Delete this question for everyone?")) S.deleteDoc(S.doc(db, "questions", b.dataset.del)).catch(denied); }));
+    $$("#mod [data-ok]").forEach((b) => (b.onclick = () => { const q = qs.find((x) => x.id === b.dataset.ok); if (q && !approved(q)) { local.approved.push(akey(q)); saveLocal(); } paint(); }));
+    $$("#mod [data-unok]").forEach((b) => (b.onclick = () => { unapprove(b.dataset.unok); paint(); }));
+    $$("#mod [data-hide]").forEach((b) => (b.onclick = () => { const hide = b.dataset.to === "1"; if (hide) unapprove(b.dataset.hide); S.updateDoc(S.doc(db, "questions", b.dataset.hide), { hidden: hide }).catch(denied); }));
+    $$("#mod [data-del]").forEach((b) => (b.onclick = () => { if (confirm("Delete this question for everyone?")) { unapprove(b.dataset.del); S.deleteDoc(S.doc(db, "questions", b.dataset.del)).catch(denied); } }));
   }
   function preview() {
     const label = $("#pvlabel"), st = $("#stage");
@@ -227,12 +232,13 @@ else {
       if (state.pollId === sel) setState({ counts: [], reveal: false });
     };
     $("#reset-all").onclick = async () => {
-      if (!confirm(`Clear all rehearsal votes?\n\nThis deletes every vote on all ${POLLS.length} polls and takes the poll off the screen. Do it after rehearsal — not during the session.`)) return;
+      if (!confirm(`Clear all rehearsal votes?\n\nThis deletes every vote on all ${POLLS.length} polls, resets question approvals and takes the poll off the screen. Do it after rehearsal — not during the session.`)) return;
       const b = $("#reset-all"); b.disabled = true; b.textContent = "Clearing…"; let n = 0;
       try {
         for (const p of POLLS) { const q = await readOnce(S.collection(db, "polls", p.id, "votes")); for (const d of q.docs) { await S.deleteDoc(S.doc(db, "polls", p.id, "votes", d.id)); n++; } }
         await setState({ pollId: null, open: false, reveal: false, counts: [] });
-        msg(`Cleared ${plural(n, "rehearsal vote")} on ${POLLS.length} polls.`, "ok");
+        local.approved = []; local.view = "poll"; saveLocal(); // rehearsal approvals must not carry into the live day
+        msg(`Cleared ${plural(n, "rehearsal vote")} on ${POLLS.length} polls, and reset question approvals.`, "ok");
       } catch (e) { denied(e); }
       b.disabled = false; b.textContent = "Clear all rehearsal votes";
     };

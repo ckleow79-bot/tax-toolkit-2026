@@ -43,8 +43,9 @@ function show(id) {
 }
 nav.addEventListener("click", (e) => { const b = e.target.closest("button"); if (b) location.hash = b.dataset.t; });
 document.addEventListener("click", (e) => { const g = e.target.closest("[data-goto]"); if (g) { location.hash = g.dataset.goto; window.scrollTo({ top: 0, behavior: "smooth" }); } });
-window.addEventListener("hashchange", () => { show(location.hash.slice(1)); window.scrollTo({ top: 0 }); });
-show(location.hash.slice(1) || "home");
+const route = () => location.hash.slice(1).split(/[?&]/)[0].toLowerCase() || "home"; // #RPGT, #rpgt?x=1 → rpgt
+window.addEventListener("hashchange", () => { show(route()); window.scrollTo({ top: 0 }); });
+show(route());
 
 // larger text toggle (remembered per browser) — scales the root font size, so every rem size grows
 const big = $("#bigtext");

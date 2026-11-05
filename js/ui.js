@@ -199,3 +199,18 @@ export function tree(container, nodes, final, onOutcome) {
   });
   render();
 }
+
+// Keep a view's inputs when the user switches views and comes back (views are rebuilt on each switch).
+export function viewMemory() {
+  const mem = {}; let cur = null;
+  return {
+    save(root) { if (!cur || !root) return; const m = (mem[cur] = {});
+      root.querySelectorAll("input[id], select[id], textarea[id]").forEach((f) => { m[f.id] = f.type === "checkbox" ? { c: f.checked } : { v: f.value }; });
+      root.querySelectorAll(".sw[id]").forEach((b) => { m[b.id] = { s: b.getAttribute("aria-checked") }; }); },
+    restore(view, root) { cur = view; const m = mem[view]; if (!m || !root) return; let any = false;
+      Object.entries(m).forEach(([id, x]) => { const f = root.querySelector("#" + CSS.escape(id)); if (!f) return; any = true;
+        if ("s" in x) f.setAttribute("aria-checked", x.s); else if ("c" in x) f.checked = x.c; else f.value = x.v; });
+      if (any) { const f = root.querySelector("input, select"); f && f.dispatchEvent(new Event(f.tagName === "SELECT" ? "change" : "input", { bubbles: true })); } },
+  };
+}
+

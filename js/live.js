@@ -168,7 +168,7 @@ export async function live(el) {
   function renderList() {
     if (!S) return;
     const open = !!(state && state.wall), mine = store.get(MINE, []);
-    list.innerHTML = items.length ? items.map((q) => { const up = q.up || [], me = up.includes(uid); return `<div class="qitem"><button class="vote" data-id="${esc(q.id)}" aria-pressed="${me}" ${me || !open ? "disabled" : ""} aria-label="${me ? "You backed this question" : open ? "Back this question" : "Backing is closed"} (${up.length} so far)">▲<span>${up.length}</span></button><div>${esc(q.text)}${mine.includes(q.id) ? `<span class="lv-mine">· yours</span>` : ""}</div></div>`; }).join("") : `<p class="sub">No questions yet${open ? " — be the first." : "."}</p>`;
+    list.innerHTML = items.length ? items.map((q) => { const up = q.up || [], me = up.includes(uid); return `<div class="qitem"><button class="vote" data-id="${esc(q.id)}" aria-pressed="${me}" ${me || !open ? "disabled" : ""} aria-label="${me ? "You backed this question" : open ? "Back this question" : "Backing is closed"} (${up.length} so far)">▲<span>${up.length}</span></button><div>${esc(cleanQ(q.text))}${mine.includes(q.id) ? `<span class="lv-mine">· yours</span>` : ""}</div></div>`; }).join("") : `<p class="sub">No questions yet${open ? " — be the first." : "."}</p>`;
     $$(".vote", list).forEach((b) => b.addEventListener("click", () => back(b.dataset.id, b)));
   }
   async function back(id, b) {

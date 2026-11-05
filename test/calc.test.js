@@ -106,4 +106,11 @@ eq("MSME partnership -> not company", c.msme({ form: "partnership", resident: tr
 eq("Co tax 120k YA2026", c.coTax(120000, true, 2026).tax, 18000); eq("Co tax 120k YA2027", c.coTax(120000, true, 2027).tax, 16800);
 // Dates and money formatting safety
 eq("D year 0050 stays 50", c.D("0050-06-01").getUTCFullYear(), 50); eq("rm NaN -> dash", c.rm(NaN), "—"); eq("rm Infinity -> dash", c.rm(Infinity), "—");
+// e-Invoice new-business guard (review E1)
+const nb = (o) => c.einvStart({ testA: false, testB: false, testC: false, reachedYA: null, ...o });
+eq("NB: FY2022 revenue -> first-year ignored (exempt)", nb({ turnover: 2e6, firstYear: 4e6, commence: "2024-03-01" }).exempt, true);
+eq("NB: FY2022 revenue -> note shown", !!nb({ turnover: 2e6, firstYear: 4e6, commence: "2024-03-01" }).note, true);
+eq("NB: commenced 2022 -> note shown", !!nb({ turnover: 0, firstYear: 4e6, commence: "2022-12-31" }).note, true);
+eq("NB: commenced 1 Feb 2027, RM4m -> 1 Feb 2027", nb({ turnover: 0, firstYear: 4e6, commence: "2027-02-01" }).start, "2027-02-01");
+eq("NB: reached RM3m YA2028 -> 1 Jan 2030", nb({ turnover: 0, firstYear: 1e6, commence: "2027-02-01", reachedYA: 2028 }).start, "2030-01-01");
 console.log(`\n${pass} passed, ${fail} failed`); if (fail) process.exit(1);

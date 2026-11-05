@@ -20,13 +20,13 @@ For a new project from scratch: create the project (Analytics off) → Firestore
 ## Two-device test (5 minutes)
 
 1. Laptop: open `presenter.html` → **Sign in with Google** with the presenter account. The panel shows "Signed in as …".
-2. Tap **Projector window ↗**. A second window opens with the stage only; it signs in on its own (same browser).
+2. Tap **Projector window ↗**. A second window opens with the stage only; it uses the same Google sign-in as this window (same browser). Rehearse once: reload the projector window and check it comes back without a click.
 3. Phone: open the site → **Live**.
 4. Presenter: pick *KC1 · RPGT* question 1 → **Open KC1-1**. Answer on the phone; the projector window shows "1 answer" (no percentages until Reveal).
 5. Presenter: **Reveal live poll (KC1-1)** — the phone shows the result, the reason and the verdict.
 6. Presenter: **Questions** tab → **Question wall: closed — tap to open**. Phone: post a test question and tap ▲. Presenter: it appears under *new — review* → **Approve** it, choose *Top questions*, and check it shows on the projector window → **Delete** it.
 7. Presenter: choose **Join QR** — this is what goes on the projector at the start.
-8. **Clean up after the test:** **Clear all rehearsal votes** (Polls tab, *Before the session* — asks once, then deletes every vote on all polls and takes the poll off the screen); delete the test questions; close the question wall.
+8. **Clean up after the test:** **Clear all rehearsal votes** (Polls tab, *Before the session* — asks once, then deletes every vote on all polls, resets question approvals and takes the poll off the screen); delete the test questions; close the question wall.
 
 If the phone says "Can't reach the live session", check the phone's internet connection (and that `firebase-config.js` is filled in). If the presenter's controls show "Not allowed — this Google account is not the presenter account", check the email in the published rules matches the Google account exactly, in lower case. If the projector window does not open, allow pop-ups for the site.
 
@@ -40,7 +40,7 @@ If the phone says "Can't reach the live session", check the phone's internet con
 - **Reopening a poll that already has answers** (e.g. you closed it too early) asks inline: **Reopen — keep the answers** is the default; **Clear and restart** deletes them. Nothing is deleted unless you choose Clear.
 - **Clear screen** takes the poll off phones and the projector (it does not delete answers).
 - Question wall: open it from the **Questions** tab when you ask for questions; close it at the end — while closed, nobody can post or upvote (phones can still draft). The tab shows a red "N new" badge. **Approve before projecting:** *Top questions* shows only approved questions (top eight by ▲). Phones see every question that is not hidden. **Hide** takes a question off phones and the projector; a question with any client detail — **Delete** it. Approvals are kept in this browser only (use the same laptop and browser all day).
-- Before the first session, after rehearsal: **Clear all rehearsal votes**.
+- Before the first session, after rehearsal: **Clear all rehearsal votes** — this also resets question approvals and the projector view, so nothing approved in rehearsal can reach the screen on the day. Approvals live in this laptop browser only.
 - If the control window is reloaded, it re-selects the live poll; the projector window keeps running.
 
 ## After the training

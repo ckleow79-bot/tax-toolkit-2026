@@ -1,6 +1,6 @@
 // Tabs 5–8 + home: e-Invoice · SVDP · Budget 2027 · Deadlines
 import * as c from "./calc.js";
-import { $, $$, h, esc, num, badInputs, pct, icon, refreshIcons, WARN, auth, fMoney, fDate, fNum, fSel, fSw, swOn, bindSw, seg, bindSeg, segVal, copyBtn, printBtn, waterfall, columns, lines, segbar, tree, C, short, toast, cw } from "./ui.js";
+import { $, $$, h, esc, num, badInputs, pct, icon, refreshIcons, WARN, auth, fMoney, fDate, fNum, fSel, fSw, swOn, bindSw, seg, bindSeg, segVal, copyBtn, printBtn, waterfall, columns, lines, segbar, tree, C, short, toast, cw, viewMemory } from "./ui.js";
 
 // ================= HOME =================
 export const TOOLS = [
@@ -55,7 +55,7 @@ export function einv(el) {
         <p class="sub" style="margin:10px 0 6px"><b>New business (started 2023 or later)</b> — GL v4.8 para 1.5</p>
         ${fDate("ei-cm", "Commencement date (new business only)", "")}
         ${fMoney("ei-fy", "First-year turnover (new business only)", "", "RM3m or more: starts 1 Jul 2026, or the commencement date if later. Below RM3m: use the question below.", { blank: "Blank — new-business rule not used" })}
-        ${fSel("ei-y", "Reached RM3m in a later YA?", [["", "No"], ["2023", "YA2023"], ["2024", "YA2024"], ["2025", "YA2025"], ["2026", "YA2026"], ["2027", "YA2027"]], "")}</div><div class="card result" id="ei-out"></div></div>`;
+        ${fSel("ei-y", "Reached RM3m in a later YA?", [["", "No"], ["2023", "YA2023"], ["2024", "YA2024"], ["2025", "YA2025"], ["2026", "YA2026"], ["2027", "YA2027"], ["2028", "YA2028"], ["2029", "YA2029"]], "")}</div><div class="card result" id="ei-out"></div></div>`;
       const run = () => {
         if (badInputs(b, $("#ei-out"))) return;
         const blankT = $("#ei-t").value.trim() === "", fyRaw = $("#ei-fy").value.trim();
@@ -70,7 +70,7 @@ export function einv(el) {
         let svg = `<line x1="20" x2="${W - 20}" y1="60" y2="60" stroke="var(--bk-n-200)" stroke-width="3"/>` + marks.map(([d, l], k) => `<circle cx="${X(d)}" cy="60" r="6" fill="${l === "Relax ends" ? "var(--bk-coral)" : "var(--bk-n-300)"}"/><text x="${X(d)}" y="${[80, 94, 80, 94, 106, 80][k]}" text-anchor="middle" font-size="11" fill="var(--text-muted)">${l}</text>`).join("");
         if (r.start) { const x = X(r.start); svg += `<rect x="${x - 58}" y="10" width="116" height="30" rx="8" fill="var(--bk-amber)" stroke="var(--bk-ink)" stroke-width="2.5"/><text x="${x}" y="30" text-anchor="middle" font-size="13" font-weight="800" fill="var(--bk-ink)">${c.fmtDate(c.D(r.start))}</text><line x1="${x}" x2="${x}" y1="40" y2="60" stroke="var(--bk-ink)" stroke-width="2.5"/><circle cx="${x}" cy="60" r="8" fill="var(--bk-ink)"/>`; }
         $("#ei-out").innerHTML = `<span class="label">${r.exempt ? "Result" : "Start date"}</span><div class="bk-hero-num" style="font-size:clamp(2rem,8vw,3.2rem)">${r.exempt ? "Exempt" : c.fmtDate(c.D(r.start))}</div>
-          <div class="verdict ${r.exempt ? "ok" : "amber"}" style="margin-top:12px">${esc(r.why)}</div>${path}<svg class="viz" viewBox="0 0 ${W} 110" role="img" aria-label="Phase timeline">${svg}</svg>
+          <div class="verdict ${r.exempt ? "ok" : "amber"}" style="margin-top:12px">${esc(r.why)}</div>${r.note ? `<div class="note" style="margin-top:8px"><b>Note:</b> ${esc(r.note)}</div>` : ""}${path}<svg class="viz" viewBox="0 0 ${W} 110" role="img" aria-label="Phase timeline">${svg}</svg>
           ${r.phase ? `<div class="kpis"><div class="kpi"><b>${r.phase.n <= 4 ? "Phase " + r.phase.n : "1 Jul 2026 cohort"}</b><span>${esc(r.phase.label)}</span></div><div class="kpi"><b>${esc(r.phase.relax)}</b><span>Relaxation period</span></div></div>` : ""}
           <div class="note">Once in, always in (FAQ Q104). A common individual shareholder or director does not make companies related. Run it on the owner's own businesses too.</div>
           ${auth("guide", "GL v4.8 paras 1.5, 1.6.1(e), 1.6.10(a)–(c) · FAQ Q12–Q20, Q100–Q104")}<div class="btns" id="ei-bb"></div>`;
@@ -91,7 +91,8 @@ export function einv(el) {
       const qa = () => { const it = ITEMS[+$("#ei-q").value]; $("#ei-qa").innerHTML = `<div class="verdict info" style="margin-top:4px">${esc(it[1])}</div>${auth("guide", it[2])}`; };
       $("#ei-q").addEventListener("change", qa); qa(); },
   };
-  const show = (v) => { const old = $("#ei-body", el); const fresh = old.cloneNode(false); old.replaceWith(fresh); views[v](fresh); refreshIcons(); };
+  const vm = viewMemory();
+  const show = (v) => { const old = $("#ei-body", el); vm.save(old); const fresh = old.cloneNode(false); old.replaceWith(fresh); views[v](fresh); vm.restore(v, fresh); refreshIcons(); };
   bindSeg($("#ei-seg", el), show); show("start");
 }
 
@@ -207,7 +208,8 @@ export function budget(el) {
           <div class="kpis"><div class="kpi"><b>${c.rm(r.fullYear)}</b><span>Full year (12 months)</span></div><div class="kpi"><b>${c.rm(Math.round(r.total * 0.24))}</b><span>Tax relief at 24% (approx.)</span></div></div>${auth("proposed", "Speech para 32 · National Wages Consultative Council Act 2011 (Act 732)")}`; };
       bindSw(b, run); b.addEventListener("input", run); run(); },
   };
-  const show = (v) => { const old = $("#bg-body", el); const fresh = old.cloneNode(false); old.replaceWith(fresh); views[v](fresh); refreshIcons(); };
+  const vm = viewMemory();
+  const show = (v) => { const old = $("#bg-body", el); vm.save(old); const fresh = old.cloneNode(false); old.replaceWith(fresh); views[v](fresh); vm.restore(v, fresh); refreshIcons(); };
   bindSeg($("#bg-seg", el), show); show("msme");
 }
 
