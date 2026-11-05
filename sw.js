@@ -1,5 +1,5 @@
 // Offline cache — the eight tools work after the first visit, even without signal. Live polls still need internet.
-const CACHE = "tct26-v1.4.4";
+const CACHE = "tct26-v1.4.5";
 // Phone precache. presenter.html, js/presenter.js and js/vendor/qrcode.js are left out (Keith's laptop only) — cached on demand if opened.
 const FILES = [
 "./",
@@ -53,6 +53,9 @@ const FILES = [
 const CODE = /\.(html|js|css|webmanifest)$/;
 const url = (f) => new URL(f, self.registration.scope).href;
 const wait = (ms) => new Promise((res) => setTimeout(res, ms));
+// Code files are fetched with ?v=<cache version>: a new release then always reads the new files from GitHub's origin,
+// never a stale copy still held by a CDN edge (seen 5 Nov 2026: new app.js with an old ui.js = blank page).
+const fresh = (u) => { const x = new URL(u); x.searchParams.set("v", CACHE); return x.href; };
 
 // Fetch every missing file on its own (one failure no longer sinks the whole offline copy). Code files revalidate
 // with the server (cheap 304 when unchanged); fonts and images use the normal HTTP cache. If the network fails, reuse
@@ -66,7 +69,8 @@ function topUp() {
       const u = url(f);
       if (await c.match(u)) return;
       try {
-        const r = await fetch(u, { cache: CODE.test(new URL(u).pathname) || u.endsWith("/") ? "no-cache" : "default" });
+        const code = CODE.test(new URL(u).pathname) || u.endsWith("/");
+        const r = await fetch(code ? fresh(u) : u, { cache: code ? "no-cache" : "default" });
         if (!r.ok) throw new Error(r.status);
         await c.put(u, r);
       } catch (e) {
@@ -105,7 +109,7 @@ self.addEventListener("fetch", (e) => {
   e.respondWith((async () => {
     const c = await caches.open(CACHE);
     const hit = () => c.match(req, { ignoreSearch: true });
-    const net = () => fetch(req, { cache: "no-cache" }).then((r) => { if (r.ok) return c.put(req, r.clone()).then(() => r); return r; });
+    const net = () => fetch(CODE.test(u.pathname) || page ? fresh(req.url) : req, { cache: "no-cache" }).then((r) => { if (r.ok) return c.put(req, r.clone()).then(() => r); return r; });
     if (page) {
       // Pages: network first with a 1.5 s limit, so a same-day fix reaches phones; the cached copy if slow or offline.
       const fresh = net().catch(() => null);
