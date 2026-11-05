@@ -8,47 +8,147 @@
 <link rel="stylesheet" href="ds/styles.css"><link rel="stylesheet" href="css/app.css">
 <style>
   body { background: var(--bk-ink); color: var(--text-on-dark); }
-  .wrap { max-width: 1400px; margin: 0 auto; padding: 20px; display: grid; gap: 20px; grid-template-columns: 340px 1fr; }
-  @media (max-width: 900px) { .wrap { grid-template-columns: 1fr; } }
-  .panel { background: var(--surface-card); color: var(--text-body); border-radius: var(--r-lg); padding: 20px; }
-  .stage { background: var(--surface-page); color: var(--text-body); border-radius: var(--r-xl); padding: 32px; min-height: 70vh; }
-  .stage h2 { font-size: clamp(1.8rem, 3vw, 2.8rem); margin: 8px 0 24px; }
-  .stage .bar { font-size: 22px; grid-template-columns: 1fr auto; } .stage .bar .track { height: 30px; } .stage .bar .mono { font-size: 24px; font-weight: 700; color: var(--text-strong); }
-  .plist button { display: block; width: 100%; text-align: left; border: 1.5px solid var(--border-base); background: var(--surface-card); border-radius: var(--r-sm); padding: 8px 10px; margin-bottom: 6px; cursor: pointer; font-size: 14px; }
+  [hidden] { display: none !important; }
+  /* Control window: controls scroll on the left, the preview stays put on the right. */
+  .wrap { display: grid; grid-template-columns: 400px minmax(0, 1fr); height: 100vh; }
+  .side, .main { height: 100vh; overflow-y: auto; padding: 16px; }
+  .main { padding-left: 4px; }
+  @media (max-width: 900px) { .wrap { display: block; height: auto; } .side, .main { height: auto; overflow: visible; padding: 12px; } }
+  .panel { background: var(--surface-card); color: var(--text-body); border-radius: var(--r-lg); padding: 18px; }
+  .row { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+  .ctl { display: flex; gap: 8px; flex-wrap: wrap; margin: 10px 0; }
+  .ctl .btn { padding: 10px 14px; font-size: 15px; }
+  .btn:disabled { background: var(--surface-sunken); color: var(--text-muted); border: var(--bw-base) solid var(--border-soft); cursor: not-allowed; transform: none; box-shadow: none; }
+  .ctlbar { margin-bottom: 12px; padding: 12px 16px; }
+  .ctlrow { display: flex; justify-content: space-between; align-items: flex-end; gap: 12px 20px; flex-wrap: wrap; }
+  .ctlrow .ctl { margin: 0; } .ctlrow .seg3 { margin: 0; min-width: 330px; }
+  body.stage-mode .ctlbar, body.stage-mode #msg, body.stage-mode .pvlabel { display: none !important; }
+  .now { background: var(--surface-sunken); border-radius: var(--r-md); padding: 10px 12px; margin: 12px 0 4px; font-size: 14px; }
+  .now b { color: var(--text-strong); }
+  .now .lbl { display: block; font-size: 11px; text-transform: uppercase; letter-spacing: .1em; color: var(--text-muted); font-weight: 700; margin-bottom: 2px; }
+  .choice { background: var(--bk-amber-100); color: var(--text-strong); border-radius: var(--r-md); padding: 12px; margin: 8px 0; font-size: 14px; }
+  .choice .ctl { margin: 8px 0 0; }
+  .seg3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin: 10px 0; }
+  .seg3 button { border: var(--bw-base) solid var(--border-base); background: var(--surface-card); border-radius: var(--r-sm); padding: 8px 4px; font-weight: 700; font-size: 13px; color: var(--text-strong); cursor: pointer; }
+  .seg3 button[aria-pressed="true"] { background: var(--bk-ink); border-color: var(--bk-ink); color: var(--text-on-dark); }
+  .h4 { font-size: 11px; text-transform: uppercase; letter-spacing: .1em; color: var(--text-muted); font-family: var(--font-body); font-weight: 700; margin: 14px 0 4px; }
+  .tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 0; margin: 14px 0 10px; border-bottom: 2px solid var(--border-soft); position: sticky; top: -16px; background: var(--surface-card); z-index: 2; }
+  .tabs button { border: 0; background: none; padding: 10px 6px; font-weight: 700; font-size: 15px; color: var(--text-muted); cursor: pointer; border-bottom: 3px solid transparent; margin-bottom: -2px; display: inline-flex; gap: 6px; justify-content: center; align-items: center; }
+  .tabs button[aria-selected="true"] { color: var(--text-strong); border-bottom-color: var(--bk-blue); }
+  .badge { background: var(--bk-coral); color: #fff; border-radius: var(--r-pill); padding: 1px 8px; font-size: 12px; font-family: var(--font-mono); }
+  .badge:empty { display: none; }
+  .plist button { display: block; width: 100%; text-align: left; border: 1.5px solid var(--border-base); background: var(--surface-card); color: var(--text-body); border-radius: var(--r-sm); padding: 8px 10px; margin-bottom: 6px; cursor: pointer; font-size: 14px; }
   .plist button.on { border-color: var(--bk-blue); background: var(--bk-blue-100); font-weight: 700; }
-  .plist h4 { font-size: 12px; text-transform: uppercase; letter-spacing: .1em; color: var(--text-muted); font-family: var(--font-body); margin: 12px 0 6px; }
-  .ctl { display: flex; gap: 8px; flex-wrap: wrap; margin: 12px 0; }
-  .qr { background: #fff; border-radius: var(--r-md); padding: 12px; display: inline-block; }
-  .count { font-family: var(--font-mono); font-size: 18px; color: var(--text-muted); }
-  .top-q { font-size: 22px; padding: 14px 0; border-bottom: 1px solid var(--border-soft); display: flex; gap: 16px; }
-  .top-q span { flex: 1; min-width: 0; overflow-wrap: anywhere; }
-  .mod { max-height: 40vh; overflow-y: auto; margin-top: 6px; }
-  .mq { padding: 8px 0; border-bottom: 1px solid var(--border-soft); font-size: 14px; display: grid; gap: 4px; }
-  .mq span { overflow-wrap: anywhere; } .mq small { color: var(--text-muted); font-family: var(--font-mono); } .mq.hid span { color: var(--text-muted); text-decoration: line-through; }
-  .mq div { display: flex; gap: 6px; }
+  .plist button .id { font-family: var(--font-mono); font-size: 12px; color: var(--text-muted); margin-right: 6px; }
+  .plist button .lv { float: right; background: var(--bk-coral); color: #fff; border-radius: var(--r-pill); padding: 0 8px; font-size: 11px; font-weight: 700; }
+  .plist h4 { font-size: 11px; text-transform: uppercase; letter-spacing: .1em; color: var(--text-muted); font-family: var(--font-body); margin: 12px 0 6px; }
+  .mq { padding: 10px 0; border-bottom: 1px solid var(--border-soft); font-size: 14px; display: grid; gap: 6px; }
+  .mq span { overflow-wrap: anywhere; color: var(--text-strong); } .mq small { color: var(--text-muted); font-family: var(--font-mono); }
+  .mq.hid span { color: var(--text-muted); text-decoration: line-through; }
+  .mq.new { border-left: 4px solid var(--bk-coral); padding-left: 10px; }
+  .mq div { display: flex; gap: 6px; flex-wrap: wrap; }
+  .mq .iconbtn.ok { background: var(--bk-success-100); border-color: var(--bk-success); color: var(--text-strong); }
+  #wall { width: 100%; justify-content: center; }
+  #wall[aria-pressed="true"] { background: var(--bk-success-100); border-color: var(--bk-success); }
   #msg:empty { display: none; } #msg { margin-bottom: 12px; }
-  .top-q b { font-family: var(--font-mono); color: var(--bk-blue); min-width: 40px; }
+  .pvlabel { display: inline-block; font-weight: 700; font-size: 14px; letter-spacing: .06em; text-transform: uppercase; border-radius: var(--r-pill); padding: 4px 14px; margin-bottom: 10px; }
+  .pvlabel.pv { background: var(--bk-amber); color: var(--bk-n-900); }
+  .pvlabel.on { background: var(--bk-success); color: #fff; }
+  .pvlabel:empty { display: none; }
+
+  /* Stage (shared by the preview and the projector window) */
+  .stage { background: var(--surface-page); color: var(--text-body); border-radius: var(--r-xl); padding: 28px 32px; }
+  .stage.pv { outline: 4px dashed var(--bk-amber); outline-offset: -4px; }
+  .stage h2 { font-size: clamp(1.8rem, 2.6vw, 2.6rem); margin: 10px 0 22px; }
+  .st-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 24px; }
+  .st-status { display: inline-block; font-weight: 700; font-size: 20px; border-radius: var(--r-pill); padding: 6px 18px; }
+  .st-open { background: var(--bk-coral); color: #fff; } .st-closed { background: var(--bk-amber-100); color: var(--text-strong); }
+  .st-res { background: var(--bk-success-100); color: var(--text-strong); } .st-off { background: var(--surface-sunken); color: var(--text-muted); }
+  .st-group { font-family: var(--font-mono); font-size: 16px; color: var(--text-muted); margin-top: 10px; letter-spacing: .04em; }
+  .st-corner { flex: none; display: grid; justify-items: center; gap: 6px; text-align: center; }
+  .st-corner .qr { width: 120px; padding: 6px; } .st-corner .mono { font-size: 12px; color: var(--text-muted); max-width: 220px; overflow-wrap: anywhere; }
+  .stage .bar { font-size: 22px; grid-template-columns: 1fr auto; margin-bottom: 14px; color: var(--text-strong); }
+  .stage .bar .track { height: 28px; } .stage .bar .mono { font-size: 24px; font-weight: 700; color: var(--text-strong); }
+  .stage .opt { font-size: 22px; padding: 12px 16px; border: 2px solid var(--border-base); border-radius: var(--r-md); margin-bottom: 10px; color: var(--text-strong); background: var(--surface-card); }
+  .ok-tag { display: inline-block; background: var(--bk-success); color: #fff; border-radius: var(--r-pill); padding: 2px 12px; font-size: .75em; font-weight: 700; margin-left: 8px; vertical-align: middle; }
+  .qr { background: #fff; border-radius: var(--r-md); padding: 12px; display: inline-block; line-height: 0; }
+  .qr svg { width: 100%; height: auto; display: block; }
+  .qr-big { width: min(56vh, 520px); }
+  .st-url { font-size: 22px; margin-top: 16px; overflow-wrap: anywhere; color: var(--text-strong); }
+  .st-join { text-align: center; } .st-join .bk-eyebrow { justify-content: center; }
+  .st-sub { font-size: 20px; color: var(--text-body); }
+  .count { font-family: var(--font-mono); font-size: 22px; color: var(--text-strong); font-weight: 700; margin: 16px 0 4px; }
+  .cite { font-size: 18px; color: var(--text-body); margin: 4px 0 0; }
+  .top-q { font-size: 22px; padding: 14px 0; border-bottom: 1px solid var(--border-soft); display: flex; gap: 16px; color: var(--text-strong); }
+  .top-q span { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+  .top-q b { font-family: var(--font-mono); color: var(--bk-blue); min-width: 56px; }
+
+  /* Projector window (presenter.html?stage): stage only, full window, sized for 1920x1080 at the back of the room. */
+  body.stage-mode { background: var(--surface-page); }
+  body.stage-mode .wrap { display: block; height: auto; }
+  body.stage-mode .side { display: none; }
+  body.stage-mode .main { height: 100vh; padding: 0; overflow: hidden; }
+  body.stage-mode .stage { min-height: 100vh; height: 100vh; border-radius: 0; padding: 4vh 4vw; overflow: hidden; }
+  /* --fit (set by presenter.js) shrinks everything a little only when a long poll would not fit the screen. */
+  body.stage-mode .stage h2 { font-size: calc(clamp(40px, 3.3vw, 72px) * var(--fit, 1)); margin: calc(2.5vh * var(--fit, 1)) 0 calc(3vh * var(--fit, 1)); line-height: 1.15; }
+  body.stage-mode .bk-eyebrow { font-size: calc(clamp(16px, 1.1vw, 24px) * var(--fit, 1)); }
+  body.stage-mode .st-status { font-size: calc(clamp(28px, 1.9vw, 40px) * var(--fit, 1)); padding: 8px 26px; }
+  body.stage-mode .st-group { font-size: calc(clamp(22px, 1.3vw, 28px) * var(--fit, 1)); }
+  body.stage-mode .st-corner .qr { width: calc(clamp(150px, 9vw, 200px) * var(--fit, 1)); }
+  body.stage-mode .st-corner .mono { font-size: calc(clamp(16px, 1vw, 22px) * var(--fit, 1)); max-width: 320px; }
+  body.stage-mode .stage .bar { font-size: calc(clamp(32px, 2.1vw, 44px) * var(--fit, 1)); margin-bottom: calc(2.4vh * var(--fit, 1)); }
+  body.stage-mode .stage .bar .track { height: calc(clamp(24px, 2.6vh, 40px) * var(--fit, 1)); }
+  body.stage-mode .stage .bar .mono { font-size: calc(clamp(32px, 2.1vw, 44px) * var(--fit, 1)); }
+  body.stage-mode .stage .opt { font-size: calc(clamp(32px, 2.1vw, 44px) * var(--fit, 1)); padding: calc(1.4vh * var(--fit, 1)) 1.4vw; margin-bottom: calc(1.6vh * var(--fit, 1)); }
+  body.stage-mode .count { font-size: calc(clamp(32px, 2vw, 42px) * var(--fit, 1)); margin-top: calc(3vh * var(--fit, 1)); }
+  body.stage-mode .cite { font-size: calc(clamp(24px, 1.5vw, 32px) * var(--fit, 1)); }
+  body.stage-mode .qr-big { width: calc(min(64vh, 46vw) * var(--fit, 1)); }
+  body.stage-mode .st-url { font-size: calc(clamp(28px, 1.9vw, 40px) * var(--fit, 1)); }
+  body.stage-mode .st-sub { font-size: calc(clamp(24px, 1.5vw, 32px) * var(--fit, 1)); }
+  body.stage-mode .st-join h2 { margin: 1.5vh 0 2.5vh; }
+  body.stage-mode .top-q { font-size: calc(clamp(30px, 2vw, 42px) * var(--fit, 1)); padding: calc(1.6vh * var(--fit, 1)) 0; }
+  body.stage-mode .top-q b { min-width: 90px; }
+  .fs-hint { position: fixed; right: 16px; bottom: 12px; font-size: 14px; color: var(--text-muted); background: var(--surface-card); border: 1px solid var(--border-soft); border-radius: var(--r-pill); padding: 6px 12px; cursor: pointer; }
 </style>
 </head>
 <body>
 <div class="wrap">
-  <div>
+  <aside class="side">
     <div class="panel" id="login">
       <img src="ds/assets/logo.svg" alt="B & K Academy" style="height:30px"><h3 style="margin:14px 0 6px">Presenter sign-in</h3><p class="sub">Sign in with the Google account named in the security rules. Other accounts can sign in but cannot open polls.</p>
       <button class="btn" id="go">Sign in with Google</button><p class="sub" id="err"></p>
     </div>
     <div class="panel" id="ctl" hidden>
-      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><b>Controls</b><button class="iconbtn" id="out">Sign out</button></div>
-      <p class="sub" style="margin:4px 0 0">Signed in as <b id="who"></b></p>
-      <div class="ctl"><button class="btn" id="open">Open</button><button class="btn ghost" id="close">Close</button><button class="btn ghost" id="reveal">Reveal</button><button class="btn ghost" id="hide">Hide</button></div>
-      <div class="ctl"><button class="btn ghost" id="view-poll">Show poll</button><button class="btn ghost" id="view-q">Show questions</button><button class="btn ghost" id="view-qr">Show join QR</button></div>
-      <div class="ctl"><button class="btn ghost" id="reset">Clear votes on this poll</button><button class="btn ghost" id="wall" aria-pressed="false">Question wall</button></div>
-      <div class="plist" id="plist"></div>
-      <h4 style="font-size:12px;text-transform:uppercase;letter-spacing:.1em;color:var(--text-muted);font-family:var(--font-body);margin:16px 0 0">Moderate questions (newest first — not projected)</h4>
-      <div class="mod" id="mod"></div>
+      <div class="row"><b>Presenter controls</b><button class="iconbtn" id="out">Sign out</button></div>
+      <p class="sub" style="margin:4px 0 8px">Signed in as <b id="who"></b></p>
+      <button class="btn" id="proj" style="width:100%;justify-content:center">Projector window ↗</button>
+      <p class="sub" style="margin:6px 0 0;font-size:13px">Opens the stage on its own. Drag it to the projector screen (extended display) and press F for full screen.</p>
+      <div class="now" id="now" aria-live="polite"></div>
+      <div class="tabs" role="tablist"><button role="tab" id="tab-polls" aria-selected="true" aria-controls="pane-polls">Polls</button><button role="tab" id="tab-qs" aria-selected="false" aria-controls="pane-qs">Questions <span class="badge" id="badge"></span></button></div>
+      <div id="pane-polls" role="tabpanel">
+        <div class="plist" id="plist"></div>
+        <div class="h4">Before the session</div>
+        <div class="ctl"><button class="btn ghost" id="reset">Clear votes on selected poll</button><button class="btn ghost" id="reset-all">Clear all rehearsal votes</button></div>
+      </div>
+      <div id="pane-qs" role="tabpanel" hidden>
+        <button class="btn ghost" id="wall" aria-pressed="false">Question wall</button>
+        <p class="sub" style="font-size:13px;margin:8px 0 0">Phones show every question that is not hidden. The projector shows only questions you <b>Approve</b>. A question with any client detail — <b>Delete</b> it.</p>
+        <div id="mod"></div>
+      </div>
     </div>
-  </div>
-  <div><div id="msg" aria-live="assertive"></div><div class="stage" id="stage"><p class="sub">Sign in to start.</p></div></div>
+  </aside>
+  <section class="main">
+    <div id="msg" aria-live="assertive"></div>
+    <div class="panel ctlbar" id="ctlbar" hidden>
+      <div class="ctlrow">
+        <div class="ctl" id="acts"><button class="btn" id="open">Open</button><button class="btn ghost" id="reveal">Reveal live poll</button><button class="btn ghost" id="close">Close live poll</button><button class="btn ghost" id="hide" title="Takes the poll off phones and the projector">Clear screen</button><button class="btn ghost" id="next" hidden>Next poll</button></div>
+        <div><div class="h4" style="margin-top:0">The projector shows</div><div class="seg3" role="group" aria-label="What the projector shows"><button id="view-poll">Live poll</button><button id="view-q">Top questions</button><button id="view-qr">Join QR</button></div></div>
+      </div>
+      <div id="choice"></div>
+    </div>
+    <div class="pvlabel" id="pvlabel"></div>
+    <div class="stage" id="stage"><p class="sub">Sign in to start.</p></div>
+  </section>
 </div>
 <script src="js/vendor/qrcode.js"></script>
 <script type="module" src="js/presenter.js"></script>

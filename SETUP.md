@@ -20,21 +20,28 @@ For a new project from scratch: create the project (Analytics off) → Firestore
 ## Two-device test (5 minutes)
 
 1. Laptop: open `presenter.html` → **Sign in with Google** with the presenter account. The panel shows "Signed in as …".
-2. Phone: open the site → **Live**.
-3. Presenter: pick *KC1 · RPGT* question 1 → **Open**. Answer on the phone; the presenter shows "1 answer" (no percentages until Reveal).
-4. Presenter: **Reveal** — the phone shows the result and the verdict.
-5. Presenter: tap **Question wall: closed** to open it. Phone: post a test question and tap ▲. Presenter: it appears in *Moderate questions* → **Delete** it.
-6. Presenter: **Show join QR** — this is what goes on the projector at the start.
-7. **Clean up after the test:** on each poll you tested, **Clear votes on this poll**; delete the test questions; close the question wall. (If you forget, **Open** will offer to clear old answers.)
+2. Tap **Projector window ↗**. A second window opens with the stage only; it signs in on its own (same browser).
+3. Phone: open the site → **Live**.
+4. Presenter: pick *KC1 · RPGT* question 1 → **Open KC1-1**. Answer on the phone; the projector window shows "1 answer" (no percentages until Reveal).
+5. Presenter: **Reveal live poll (KC1-1)** — the phone shows the result, the reason and the verdict.
+6. Presenter: **Questions** tab → **Question wall: closed — tap to open**. Phone: post a test question and tap ▲. Presenter: it appears under *new — review* → **Approve** it, choose *Top questions*, and check it shows on the projector window → **Delete** it.
+7. Presenter: choose **Join QR** — this is what goes on the projector at the start.
+8. **Clean up after the test:** **Clear all rehearsal votes** (Polls tab, *Before the session* — asks once, then deletes every vote on all polls and takes the poll off the screen); delete the test questions; close the question wall.
 
-If the phone says "Live session not available", check the internet connection and that `firebase-config.js` is filled in. If the presenter's controls show "Not allowed — this Google account is not the presenter account", check the email in the published rules matches the Google account exactly, in lower case.
+If the phone says "Can't reach the live session", check the phone's internet connection (and that `firebase-config.js` is filled in). If the presenter's controls show "Not allowed — this Google account is not the presenter account", check the email in the published rules matches the Google account exactly, in lower case. If the projector window does not open, allow pop-ups for the site.
 
 ## On the day
 
-- Projector: `presenter.html` → **Show join QR** while people arrive, then the *Opening* poll.
+- **Two screens, not mirrored.** Set the laptop display to *Extend* (Windows: Win+P → Extend). Open `presenter.html` on the laptop screen and tap **Projector window ↗**; drag that window to the projector and press **F** for full screen. The projector window shows only what the room should see: the **live** poll, the join QR, or the questions you approved — never the poll you are previewing, the moderation list or hidden questions. If you must mirror, keep the control window on *Join QR* or the live poll only.
+- The control window's stage is a **preview**: an amber "PREVIEW — not on screen" label means the room cannot see it. Green "On the projector" means it can.
+- *The projector shows*: **Live poll** / **Top questions** / **Join QR**. Start on **Join QR** while people arrive, then **Live poll** for the *Opening* poll.
 - Knowledge checks KC1–KC4 follow deck slides 73, 96, 142 and 158; *W2.4 · SVDP* follows slide 244; room checks close each session.
-- **Open** → let the room answer (the stage shows only the number of answers) → **Reveal** (it closes the poll, waits a moment for late answers, then shows the result). **Hide** clears the poll from phones.
-- Question wall: tap **Question wall** to open it at the start and close it at the end of the day — while closed, nobody can post or upvote. **Show questions** projects the top eight. Moderate from the left panel (all questions, newest first, not projected): **Hide** takes a question off phones and the projector; a question with any client detail — **Delete** it.
+- The next step always has the solid blue button: **Open** → let the room answer (the stage shows only the number of answers; phones on other tabs get a "Poll open — tap to answer" prompt) → **Reveal live poll** (it closes the poll, waits a moment for late answers, then shows the result with ✓ Correct and the authority) → **Next poll ▸**. Reveal and Close act only on the live poll, even while you preview another one.
+- **Reopening a poll that already has answers** (e.g. you closed it too early) asks inline: **Reopen — keep the answers** is the default; **Clear and restart** deletes them. Nothing is deleted unless you choose Clear.
+- **Clear screen** takes the poll off phones and the projector (it does not delete answers).
+- Question wall: open it from the **Questions** tab when you ask for questions; close it at the end — while closed, nobody can post or upvote (phones can still draft). The tab shows a red "N new" badge. **Approve before projecting:** *Top questions* shows only approved questions (top eight by ▲). Phones see every question that is not hidden. **Hide** takes a question off phones and the projector; a question with any client detail — **Delete** it. Approvals are kept in this browser only (use the same laptop and browser all day).
+- Before the first session, after rehearsal: **Clear all rehearsal votes**.
+- If the control window is reloaded, it re-selects the live poll; the projector window keeps running.
 
 ## After the training
 
