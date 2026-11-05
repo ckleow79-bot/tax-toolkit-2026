@@ -210,7 +210,8 @@ export function viewMemory() {
     restore(view, root) { cur = view; const m = mem[view]; if (!m || !root) return; let any = false;
       Object.entries(m).forEach(([id, x]) => { const f = root.querySelector("#" + CSS.escape(id)); if (!f) return; any = true;
         if ("s" in x) f.setAttribute("aria-checked", x.s); else if ("c" in x) f.checked = x.c; else f.value = x.v; });
-      if (any) { const f = root.querySelector("input, select"); f && f.dispatchEvent(new Event(f.tagName === "SELECT" ? "change" : "input", { bubbles: true })); } },
+      if (any) { // re-run from a plain input, never a select: a profile/preset select would reload its preset over the restored edits
+        const f = root.querySelector("input:not([type=checkbox])"); if (f) f.dispatchEvent(new Event("input", { bubbles: true })); else { const b = root.querySelector(".sw"); b && b.dispatchEvent(new Event("input", { bubbles: true })); } } },
   };
 }
 
