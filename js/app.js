@@ -68,3 +68,4 @@ if ("serviceWorker" in navigator) {
   sw.ready.then((reg) => reg.active && reg.active.postMessage({ type: "tct26-topup" })).catch(() => {});
 }
 let rz; window.addEventListener("resize", () => { clearTimeout(rz); rz = setTimeout(() => { const s = document.querySelector(".tab.on"); const i = s && s.querySelector("input"); i && i.dispatchEvent(new Event("input", { bubbles: true })); }, 250); });
+import("./live.js").then((m) => m.watchLive()).catch(() => {});

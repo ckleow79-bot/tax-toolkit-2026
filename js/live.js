@@ -71,7 +71,9 @@ function css() {
 
 // ---------- Global cue: a poll or the question wall opens while the participant is on another tab ----------
 // app.js calls this once: import("./live.js").then((m) => m.watchLive());
+let watching = false;
 export function watchLive(onChange) {
+  if (watching) return; watching = true; // idempotent: app.js starts it once; a second call would stack cues
   css();
   let prev = null, started = false, wallNew = false, cue = null;
   const onLive = () => location.hash.slice(1) === "live";
