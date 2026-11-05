@@ -5,7 +5,7 @@ import { $, $$, esc, icon, refreshIcons, toast } from "./ui.js";
 
 const L = "ABCD", MAX = 240, DRAFT = "tct26-qdraft", MINE = "tct26-myq";
 // Knowledge-check group → the tool that works the same point (shown after Reveal).
-const TOOL = { KC1: ["rpgt", "RPGT calculator"], KC2: ["rpgt", "RPC 75% test in the RPGT tool"], KC3: ["cgt", "CGT calculator"], KC4: ["stamp", "Stamp duty tool"], "W2.4": ["svdp", "SVDP filing helper"] };
+const TOOL = { KC1: ["rpgt", "RPGT calculator"], KC2: ["rpgt", "RPGT tool (RPC 75% test)"], KC3: ["cgt", "CGT calculator"], KC4: ["stamp", "Stamp duty tool"], "W2.4": ["svdp", "SVDP filing helper"] };
 const store = { get(k, d) { try { const v = localStorage.getItem(k); return v === null ? d : JSON.parse(v); } catch (e) { return d; } }, set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} } };
 
 // Plain words instead of raw error codes.
@@ -191,7 +191,7 @@ export async function live(el) {
       if (p.a !== null) {
         const t = TOOL[(p.group || "").split(" ")[0]];
         html += `<div class="verdict ${myVote === p.a ? "ok" : "amber"}" style="margin-top:12px;display:block">${myVote === p.a ? "Nice — that's the one." : myVote === null ? "The answer is " + L[p.a] + "." : "Not quite — the answer is " + L[p.a] + "."}
-          <div class="lv-why">Why: <b>${L[p.a]} · ${esc(p.o[p.a])}</b>${p.why ? ` — ${esc(p.why)}` : ""}${t ? `<br><a data-goto="${t[0]}">Work it through in the ${esc(t[1])} →</a>` : ""}</div></div>`;
+          <div class="lv-why">Why: <b>${L[p.a]} · ${esc(p.o[p.a])}</b>${p.why ? ` — ${esc(p.why)}` : ""}${t ? `<br><a href="#${t[0]}" data-goto="${t[0]}">Work it through in the ${esc(t[1])} →</a>` : ""}</div></div>`;
       } else html += `<p class="sub">Thanks — that's how the room sees it.</p>`;
       html += note;
     } else {
