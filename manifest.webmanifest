@@ -1,9 +1,12 @@
 {
+  "id": "./",
   "name": "Tax Compliance Toolkit 2026",
   "short_name": "Tax Toolkit",
+  "description": "RPGT, CGT, stamp duty, e-Invoice, SVDP, Budget 2027 and deadline tools for the KS Leow in-house training, 7 Nov 2026. Works offline after the first visit. Training tool — not tax advice.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
+  "orientation": "portrait",
   "background_color": "#FCFBF8",
   "theme_color": "#15213B",
   "icons": [
