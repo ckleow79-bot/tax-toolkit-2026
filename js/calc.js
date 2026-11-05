@@ -18,13 +18,13 @@ const r2 = (n) => Math.round(n * 100) / 100;
 // ---------- RPGT ----------
 export const RPGT_PERSONS = [
   { id: "citizen", label: "Malaysian citizen or PR individual", cat: "I", individual: true },
-  { id: "soleprop", label: "Sole proprietor (taxed as the individual)", cat: "I", individual: true },
-  { id: "partnership", label: "Partnership (the partnership is the disposer)", cat: "I", individual: false },
+  { id: "soleprop", label: "Sole proprietor", cat: "I", individual: true },
+  { id: "partnership", label: "Partnership (it is the disposer)", cat: "I", individual: false },
   { id: "estate_cit", label: "Executor of a citizen / PR estate", cat: "I", individual: false },
   { id: "company", label: "Company incorporated in Malaysia", cat: "II", individual: false },
   { id: "llp", label: "LLP or co-operative", cat: "II", individual: false },
   { id: "trust", label: "Trustee of a trust", cat: "II", individual: false },
-  { id: "society", label: "Society registered under the Societies Act", cat: "II", individual: false },
+  { id: "society", label: "Registered society", cat: "II", individual: false },
   { id: "noncitizen", label: "Non-citizen, non-PR individual", cat: "III", individual: true },
   { id: "estate_non", label: "Executor of a non-citizen estate", cat: "III", individual: false },
   { id: "foreignco", label: "Company not incorporated in Malaysia", cat: "III", individual: false },
