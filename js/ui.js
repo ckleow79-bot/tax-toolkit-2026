@@ -3,7 +3,61 @@ export const $ = (s, r = document) => r.querySelector(s);
 export const $$ = (s, r = document) => [...r.querySelectorAll(s)];
 export const h = (html) => { const t = document.createElement("template"); t.innerHTML = html.trim(); return t.content.firstElementChild; };
 export const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
-export const num = (v) => { const n = parseFloat(String(v).replace(/[^0-9.\-]/g, "")); return isNaN(n) ? 0 : n; };
+// ---------- number parsing (money and plain-number fields) ----------
+export const MAX_MONEY = 10e9; // RM10bn — anything larger is treated as a typo
+const MULT = { k: 1e3, thousand: 1e3, m: 1e6, mil: 1e6, mill: 1e6, mn: 1e6, million: 1e6, b: 1e9, bn: 1e9, billion: 1e9 };
+/** Parse "850k", "1.2m", "3.3 million", "RM 1,200,000.50", "10%". Never returns NaN, Infinity or a negative.
+ *  o: {money, max, min, int}. Returns {ok, value, empty, msg}. */
+export function parseNum(v, o = {}) {
+  const bad = (msg) => ({ ok: false, value: 0, msg });
+  const raw = String(v ?? "").trim();
+  if (!raw) return { ok: true, empty: true, value: 0 };
+  if (raw.length > 40) return bad("Too long — check the number");
+  let s = raw.replace(/^rm\s*/i, "").replace(/,/g, "").replace(/(\d)\s+(?=\d)/g, "$1").trim(); if (!o.money) s = s.replace(/\s*%$/, "");
+  if (/^[+-]?(\d+\.?\d*|\.\d+)\s*e\s*[+-]?\d+$/i.test(s)) return bad("Type the full number (e.g. 1,000,000 or 1m) — not scientific notation like 1e9");
+  if (/^-|^\(.*\)$/.test(s)) return bad(o.money ? "An amount cannot be negative — enter it as a positive number" : "Cannot be negative");
+  const m = s.match(/^\+?(\d+(?:\.\d*)?|\.\d+)\s*([a-z]+)?\.?$/i);
+  if (!m) return bad(o.money ? "Use digits only — e.g. 850,000, 850k, 1.2m or 3.3 million" : "Use digits only");
+  let n = parseFloat(m[1]);
+  if (m[2]) { const k = MULT[m[2].toLowerCase()]; if (!k) return bad(`"${m[2]}" is not understood — use k (thousand), m (million) or bn`); n *= k; }
+  n = Math.round(n * 100) / 100;
+  const max = o.max ?? (o.money ? MAX_MONEY : Infinity);
+  if (!isFinite(n)) return bad("Too large — check the number");
+  if (n > max) return bad(o.money ? `Above ${max === MAX_MONEY ? "RM10bn" : fmtRM(max)} — check the amount` : `Maximum is ${max.toLocaleString("en-MY")}`);
+  if (o.min !== undefined && n < o.min) return bad(`Minimum is ${o.min.toLocaleString("en-MY")}`);
+  if (o.int && !Number.isInteger(n)) return bad("Whole number only");
+  return { ok: true, value: n };
+}
+/** Safe number for calculations: invalid or blank input gives 0 (the field shows its own message and the result is blocked by badInputs). */
+export const num = (v, o) => { const r = parseNum(v, o); return r.ok ? r.value : 0; };
+export const fmtRM = (n) => "RM" + n.toLocaleString("en-MY", { minimumFractionDigits: n % 1 ? 2 : 0, maximumFractionDigits: 2 });
+const fieldOpts = (inp) => ({ money: inp.dataset.kind === "money", max: inp.dataset.max ? +inp.dataset.max : undefined, min: inp.dataset.min ? +inp.dataset.min : undefined, int: inp.dataset.int === "1" });
+/** Validate one field, update its echo / error line and aria-invalid. */
+export function fieldCheck(inp) {
+  const o = fieldOpts(inp), r = parseNum(inp.value, o), msg = document.getElementById(inp.id + "-m");
+  inp.setAttribute("aria-invalid", r.ok ? "false" : "true");
+  inp.style.borderColor = r.ok ? "" : "var(--bk-danger)";
+  if (msg) {
+    msg.classList.toggle("err", !r.ok);
+    msg.style.color = r.ok ? "var(--text-strong)" : "var(--bk-danger)";
+    msg.textContent = !r.ok ? r.msg : r.empty ? (inp.dataset.blank || (o.money ? "Blank — using RM0" : "")) : o.money ? "Using " + fmtRM(r.value) : "";
+  }
+  return r;
+}
+/** Check every number field in root (optionally only ids starting with prefix, or an array of exact ids). If any is invalid, write a message into out and return true. */
+export function badInputs(root, out, prefix = "") {
+  const pick = (id) => !prefix || (Array.isArray(prefix) ? prefix.includes(id) : id.startsWith(prefix));
+  const bad = $$("input[data-kind]", root).filter((i) => pick(i.id)).map((i) => [i, fieldCheck(i)]).filter(([, r]) => !r.ok);
+  if (!bad.length) return false;
+  const name = (i) => { const l = root.querySelector(`label[for="${i.id}"]`); return l ? l.textContent.trim() : i.id; };
+  if (out) out.innerHTML = `<div class="verdict no"><span class="bk-coin bk-coin--paper">!</span><span>Check ${esc(name(bad[0][0]))}: ${esc(bad[0][1].msg)}${bad.length > 1 ? ` (and ${bad.length - 1} more field${bad.length > 2 ? "s" : ""})` : ""}</span></div>`;
+  return true;
+}
+if (typeof document !== "undefined") {
+  document.addEventListener("input", (e) => { const t = e.target; if (t && t.matches && t.matches("input[data-kind]")) fieldCheck(t); });
+  document.addEventListener("focusout", (e) => { const t = e.target; if (!t || !t.matches || !t.matches("input[data-kind]")) return;
+    const r = fieldCheck(t); if (r.ok && !r.empty) t.value = r.value.toLocaleString("en-MY", { minimumFractionDigits: r.value % 1 ? 2 : 0, maximumFractionDigits: 2 }); });
+}
 export const pct = (n, dp = 0) => (n * 100).toFixed(dp) + "%";
 export const icon = (name) => `<i data-lucide="${name}"></i>`;
 export const refreshIcons = () => { try { window.lucide && window.lucide.createIcons(); } catch (e) {} };
@@ -15,9 +69,15 @@ export const TAG = { inforce: "IN FORCE", proposed: "PROPOSED", guide: "LHDN GUI
 export const auth = (tag, text) => `<div class="auth"><span class="tag ${tag}">${TAG[tag]}</span><span>${esc(text)}</span></div>`;
 
 // money input field
-export const fMoney = (id, label, val, hint = "") => `<div class="field"><label for="${id}">${label}</label><div class="money"><input id="${id}" inputmode="decimal" value="${val}" autocomplete="off"></div>${hint ? `<span class="hint">${hint}</span>` : ""}</div>`;
+// money input field — accepts 850k / 1.2m / RM 1,200,000.50; shows a bold "Using RM…" echo or an inline error under the box.
+// o: {blank: text shown when empty, max}
+const echo = (id, val, o, money) => { const r = parseNum(val, { money, ...o }); const t = !r.ok ? r.msg : r.empty ? (o.blank || (money ? "Blank — using RM0" : "")) : money ? "Using " + fmtRM(r.value) : "";
+  return `<span class="fmsg money-echo${r.ok ? "" : " err"}" id="${id}-m" aria-live="polite" style="font-size:var(--fs-xs);font-weight:700;color:${r.ok ? "var(--text-strong)" : "var(--bk-danger)"}">${esc(t)}</span>`; };
+const dataAttrs = (kind, o) => `data-kind="${kind}"${o.max !== undefined ? ` data-max="${o.max}"` : ""}${o.min !== undefined ? ` data-min="${o.min}"` : ""}${o.int ? ` data-int="1"` : ""}${o.blank ? ` data-blank="${esc(o.blank)}"` : ""}`;
+export const fMoney = (id, label, val, hint = "", o = {}) => `<div class="field"><label for="${id}">${label}</label><div class="money"><input id="${id}" inputmode="decimal" value="${val}" autocomplete="off" ${dataAttrs("money", o)} aria-describedby="${id}-m"></div>${echo(id, val, o, true)}${hint ? `<span class="hint">${hint}</span>` : ""}</div>`;
 export const fDate = (id, label, val, hint = "") => `<div class="field"><label for="${id}">${label}</label><input id="${id}" type="date" value="${val}">${hint ? `<span class="hint">${hint}</span>` : ""}</div>`;
-export const fNum = (id, label, val, hint = "") => `<div class="field"><label for="${id}">${label}</label><input id="${id}" inputmode="decimal" value="${val}" autocomplete="off">${hint ? `<span class="hint">${hint}</span>` : ""}</div>`;
+// plain number field. o: {min, max, int, blank}
+export const fNum = (id, label, val, hint = "", o = {}) => `<div class="field"><label for="${id}">${label}</label><input id="${id}" inputmode="decimal" value="${val}" autocomplete="off" ${dataAttrs("num", o)} aria-describedby="${id}-m">${echo(id, val, o, false)}${hint ? `<span class="hint">${hint}</span>` : ""}</div>`;
 export const fSel = (id, label, opts, val, hint = "") => `<div class="field"><label for="${id}">${label}</label><select id="${id}">${opts.map(([v, l]) => `<option value="${v}"${v === val ? " selected" : ""}>${esc(l)}</option>`).join("")}</select>${hint ? `<span class="hint">${hint}</span>` : ""}</div>`;
 export const fSw = (id, label, on = false) => `<div class="toggle"><span id="${id}-l">${label}</span><button class="sw" id="${id}" role="switch" aria-checked="${on}" aria-labelledby="${id}-l"></button></div>`;
 export const swOn = (el) => el.getAttribute("aria-checked") === "true";

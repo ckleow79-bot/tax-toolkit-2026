@@ -4,7 +4,7 @@
 export const AS_AT = "7 Nov 2026";
 
 // ---------- dates ----------
-export const D = (s) => { const [y, m, d] = s.split("-").map(Number); return new Date(Date.UTC(y, m - 1, d)); };
+export const D = (s) => { const [y, m, d] = s.split("-").map(Number); const dt = new Date(0); dt.setUTCFullYear(y, m - 1, d); dt.setUTCHours(0, 0, 0, 0); return dt; }; // setUTCFullYear: year 0050 stays 50 AD, not 1950
 export const iso = (dt) => dt.toISOString().slice(0, 10);
 export const addDays = (dt, n) => new Date(dt.getTime() + n * 86400000);
 export const addYears = (dt, n) => { const r = new Date(dt.getTime()); r.setUTCFullYear(r.getUTCFullYear() + n); return r; };
@@ -12,7 +12,7 @@ export const addMonths = (dt, n) => { const r = new Date(dt.getTime()); const da
   const last = new Date(Date.UTC(r.getUTCFullYear(), r.getUTCMonth() + 1, 0)).getUTCDate(); r.setUTCDate(Math.min(day, last)); return r; };
 const MON = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 export const fmtDate = (dt) => `${dt.getUTCDate()} ${MON[dt.getUTCMonth()]} ${dt.getUTCFullYear()}`;
-export const rm = (n, dp = 0) => (n < 0 ? "(" : "") + "RM" + Math.abs(n).toLocaleString("en-MY", { minimumFractionDigits: dp, maximumFractionDigits: dp }) + (n < 0 ? ")" : "");
+export const rm = (n, dp = 0) => !Number.isFinite(n) ? "—" : (n < 0 ? "(" : "") + "RM" + Math.abs(n).toLocaleString("en-MY", { minimumFractionDigits: dp, maximumFractionDigits: dp }) + (n < 0 ? ")" : "");
 const r2 = (n) => Math.round(n * 100) / 100;
 
 // ---------- RPGT ----------
@@ -68,9 +68,23 @@ export function rpgt(i) {
 export function rpcTest(landMV, rpcShares, otherTangible, controlled = true) {
   const defined = landMV + rpcShares, total = defined + otherTangible;
   const ratio = total > 0 ? defined / total : 0;
-  return { defined, total, ratio, controlled, isRPC: controlled && ratio >= 0.75, authority: "RPGTA Sch 2 para 34A(6) — a controlled company; market value of land, intangibles excluded" };
+  const isRPC = controlled && ratio >= 0.75;
+  // Display: truncated, never rounded up — 74.99% must not read as 75%.
+  const pct2 = Math.floor(ratio * 10000 + 1e-7) / 100;
+  // Headroom in RM of land at market value (other assets unchanged): below 75% -> land that would reach 75%; at/above -> fall in land needed to go below.
+  const headroom = ratio >= 0.75 ? r2(4 * defined - 3 * total) : r2(3 * total - 4 * defined);
+  return { defined, total, ratio, pct2, headroom, empty: total <= 0, controlled, isRPC, authority: "RPGTA Sch 2 para 34A(6) — a controlled company; market value of land, intangibles excluded" };
 }
 export const rpcDeemedPrice = (A, B, C) => (B > 0 ? r2(A / B * C) : 0);
+/** Deemed price A ÷ B × C with input checks (para 34A(2)(a)). */
+export function rpcDeemed(A, B, C) {
+  if (!A && !B && !C) return { error: "Enter A, B and C to work out the deemed price." };
+  if (!B) return { error: "B (total issued shares) cannot be zero." };
+  if (!A) return { error: "Enter A — the number of shares held." };
+  if (A > B) return { error: "A (shares held) cannot be more than B (total issued shares)." };
+  if (!C) return { error: "Enter C — the defined value at the date the company became an RPC." };
+  return { price: rpcDeemedPrice(A, B, C), share: A / B };
+}
 
 // ---------- CGT ----------
 export const CGT_PERSONS = [
@@ -90,11 +104,11 @@ export function cgt(i) {
   const gain = dispPrice - (i.acqPrice + (i.acqCosts || 0));
   const opt10 = r2(Math.max(0, gain) * 0.10);
   const opt2 = preAcq ? r2(i.consideration * 0.02) : null;
-  const best = opt2 !== null && opt2 < opt10 ? "2%" : "10%";
+  const best = gain > 0 && opt2 !== null && opt2 < opt10 ? "2%" : "10%"; // never elect 2% on a loss or nil gain — it would create tax
   return {
-    person: p, inside: p.inside, preAcq, exemptWindow, badDates, preCGT, gain, opt10, opt2, best, tax: exemptWindow || preCGT || badDates ? 0 : (best === "2%" ? opt2 : opt10),
+    person: p, inside: p.inside, preAcq, exemptWindow, badDates, preCGT, gain, loss: gain < 0, nil: gain <= 0, opt10, opt2, best, tax: exemptWindow || preCGT || badDates ? 0 : (best === "2%" ? opt2 : opt10),
     breakEvenGain: r2(i.consideration * 0.2), due: addDays(disp, 60),
-    authority: "ITA s.4(aa), s.65E, Sch 1 Part XXI · CGT Guidelines 2025 para 15",
+    authority: "ITA s.4(aa), s.65E, Sch 1 Part XXI · CGT Guidelines 2025 para 15 (rate), para 16 (e-CKM and payment in 60 days)",
   };
 }
 
@@ -140,10 +154,13 @@ export const PHASES = [
   { n: 4, label: "From RM3m up to RM5m", start: "2026-01-01", relax: "To 31 Dec 2027" },
   { n: 5, label: "Below RM3m — not exempt", start: "2026-07-01", relax: "To 31 Dec 2027" },
 ];
-/** i: {turnover, testA, testB, testC, reachedYA (number|null), commence (iso|null)} */
+/** i: {turnover, testA, testB, testC, reachedYA (number|null), commence (iso|null), firstYear (number|null — new business's first-year turnover)}
+ *  turnover null/undefined = not entered: no result. 0 = no FY2022 revenue. */
 export function einvStart(i) {
   const steps = [];
   const later = (a, b) => (b && D(b) > D(a) ? b : a);
+  if (i.turnover === null || i.turnover === undefined || Number.isNaN(i.turnover))
+    return { phase: null, start: null, missing: true, why: "Enter FY2022 turnover — type 0 if the business had no FY2022 revenue (for example, it started in 2023 or later).", path: [] };
   if (i.turnover !== null && i.turnover > 100e6) return { phase: PHASES[0], start: PHASES[0].start, why: "FY2022 turnover above RM100m — Phase 1", path: ["t"] };
   if (i.turnover !== null && i.turnover > 25e6) return { phase: PHASES[1], start: PHASES[1].start, why: "FY2022 turnover above RM25m up to RM100m — Phase 2", path: ["t"] };
   if (i.turnover !== null && i.turnover > 5e6) return { phase: PHASES[2], start: PHASES[2].start, why: "FY2022 turnover above RM5m up to RM25m — Phase 3", path: ["t"] };
@@ -152,6 +169,14 @@ export function einvStart(i) {
   for (const [k, lab] of [["testA", "test (a) — a non-individual shareholder with revenue of RM3m or more"], ["testB", "test (b) — subsidiary of a holding company with RM3m or more"], ["testC", "test (c) — related company or JV (20% or control) with RM3m or more"]]) {
     steps.push(k);
     if (i[k]) { const s = later("2026-07-01", i.commence); return { phase: PHASES[4], start: s, why: `Below RM3m but fails ${lab} — 1 Jul 2026, or commencement if later`, path: steps }; }
+  }
+  steps.push("new");
+  const fy = i.firstYear;
+  if (fy !== null && fy !== undefined && fy >= 3e6) { // GL v4.8 para 1.5 — new business with first-year turnover of RM3m or more
+    if (!i.commence) return { phase: null, start: null, missing: true, why: "First-year turnover is RM3m or more — enter the commencement date to apply the new-business rule (GL v4.8 para 1.5).", path: steps };
+    const cy = D(i.commence).getUTCFullYear();
+    if (cy >= 2023 && cy <= 2025) return { phase: null, start: "2026-07-01", newBiz: true, why: `New business commenced in ${cy} with first-year turnover of RM3m or more — 1 Jul 2026 (GL v4.8 para 1.5)`, path: steps };
+    if (cy >= 2026) { const s = later("2026-07-01", i.commence); return { phase: null, start: s, newBiz: true, why: `New business commenced ${fmtDate(D(i.commence))} with first-year turnover of RM3m or more — the later of 1 Jul 2026 and the commencement date (GL v4.8 para 1.5)`, path: steps }; }
   }
   steps.push("grow");
   if (i.reachedYA) {
@@ -167,10 +192,22 @@ export function utcStamp(isoDate, hhmm = "09:00") { // MYT = UTC+8
   const [h, m] = hhmm.split(":").map(Number); const dt = new Date(D(isoDate).getTime() + (h * 60 + m - 480) * 60000);
   return dt.toISOString().replace(".000Z", "Z");
 }
+/** SVDP month range. first/last "YYYY-MM"; startIso = client's e-Invoice start date; nowIso = today. Future months and months before the start are listed but not counted. */
+export function svdpMonths(first, last, startIso, nowIso) {
+  if (!first || !last) return { months: [], count: 0, err: "Set the first and last month." };
+  const f = D(first + "-01"), t = D(last + "-01"), lab = (d) => `${MON[d.getUTCMonth()]} ${d.getUTCFullYear()}`;
+  if (t < f) return { months: [], count: 0, reversed: true, err: `The last month (${lab(t)}) is before the first month (${lab(f)}) — swap them.` };
+  const now = D(nowIso.slice(0, 7) + "-01"), start = startIso ? D(startIso) : null, out = [];
+  let d = f, capped = false;
+  while (d <= t) { if (out.length >= 60) { capped = true; break; } out.push({ d, pre: !!start && addMonths(d, 1) <= start, future: d > now }); d = addMonths(d, 1); }
+  return { months: out, capped, future: out.filter((m) => m.future).length, count: out.filter((m) => !m.pre && !m.future).length };
+}
 export const exposure = (count) => ({ min: count * 200, max: count * 20000, authority: "ITA s.120(1)(d) — fine RM200 to RM20,000, or up to 6 months' imprisonment, or both, per offence" });
 
 // ---------- Budget 2027 ----------
 export function msme(i) {
+  if (i.form === "soleprop" || i.form === "partnership")
+    return { isMSME: false, notCompany: true, fails: ["Not a company or LLP — the company MSME rate does not apply; the owner pays individual rates on business income"], authority: "ITA Sch 1 Part I (individual rates) · Part I para 2A applies to companies and LLPs only" };
   const fails = [];
   if (!i.resident) fails.push("Not resident / not incorporated or registered in Malaysia (PR 8/2025 para 5.2)");
   if (i.capital > 2.5e6) fails.push("Paid-up capital above RM2.5m at the start of the basis period (5.3.1)");

@@ -1,7 +1,8 @@
 // Tabs 1–4: Which regime · RPGT · CGT · Stamp duty
 import * as c from "./calc.js";
-import { $, $$, h, esc, num, pct, icon, refreshIcons, WARN, auth, fMoney, fDate, fNum, fSel, fSw, swOn, bindSw, seg, bindSeg, segVal, copyBtn, printBtn, waterfall, columns, lines, segbar, gauge, tree, C, short } from "./ui.js";
+import { $, $$, h, esc, num, badInputs, pct, icon, refreshIcons, WARN, auth, fMoney, fDate, fNum, fSel, fSw, swOn, bindSw, seg, bindSeg, segVal, copyBtn, printBtn, waterfall, columns, lines, segbar, gauge, tree, C, short } from "./ui.js";
 const go = (t) => `<button class="btn" data-goto="${t}">${icon("arrow-right")}Open the ${t.toUpperCase()} calculator</button>`;
+const badYear = (iso) => { const y = +String(iso).slice(0, 4); return !(y >= 1900 && y <= 2100); };
 const goBtn = (tab, label) => `<button class="btn" data-goto="${tab}">${icon("arrow-right")}${label}</button>`;
 
 // ================= 1. WHICH REGIME =================
@@ -39,13 +40,14 @@ export function rpgt(el) {
     <p class="lead">Rate by Schedule 5 Part and year of disposal, Sch 4 exemption, the 3 / 5 / 7% retention and both deadlines — with the computation drawn out.</p></div>
     ${seg("rp-seg", [["land", "Land / property"], ["rpc", "RPC shares"]], "land", "Asset type")}
     <div class="grid two"><div><div class="card">${WARN}
-      <div class="btns" style="margin:0 0 14px"><button class="btn ghost" data-pre="a2">Keluarga Tan · Asset 2</button><button class="btn ghost" data-pre="a3">Asset 3 · Wei Ming</button><button class="btn ghost" data-pre="s53">Sdn Bhd shop lot</button></div>
-      ${fSel("rp-p", "Disposer", c.RPGT_PERSONS.map((p) => [p.id, `${p.label} — Part ${p.cat}`]), "partnership")}
+      <div class="btns" style="margin:0 0 14px"><button class="btn ghost" data-pre="a2">Keluarga Tan · Asset 2</button><button class="btn ghost" data-pre="a3">Asset 3 · Wei Ming</button><button class="btn ghost" data-pre="s53">Sdn Bhd shop lot</button><button class="btn ghost" id="rp-reset">${icon("rotate-ccw")}Reset</button></div>
+      <div id="rp-banner"></div>
+      ${fSel("rp-p", "Disposer", c.RPGT_PERSONS.map((p) => [p.id, `${p.label} — Part ${p.cat}`]), "citizen")}
       <div class="row2">${fDate("rp-ad", "Acquisition date", "2022-01-10", "SPA / transfer date")}${fDate("rp-dd", "Disposal date", "2026-03-20", "SPA date (para 15)")}</div>
       <div class="row2">${fMoney("rp-dp", "Disposal price", "1,000,000")}${fMoney("rp-dc", "Disposal costs", "20,000", "Agent, legal on sale")}</div>
-      <div class="row2">${fMoney("rp-ap", "Acquisition price", "400,000", "Para 35(2) cost for a partnership")}${fMoney("rp-ac", "Acquisition costs", "12,000", "Legal, stamp duty on purchase")}</div>
+      <div class="row2">${fMoney("rp-ap", "Acquisition price", "400,000", "Partnership: para 35(2) cost")}${fMoney("rp-ac", "Acquisition costs", "12,000", "Legal, stamp duty on purchase")}</div>
       ${fMoney("rp-en", "Enhancement", "38,000", "Renovation, title defence — not quit rent, interest, repairs")}
-      ${fMoney("rp-cash", "Cash part of the price (blank = all cash)", "", "For share swaps or part-cash deals — s.21B(1)")}
+      ${fMoney("rp-cash", "Cash part of the price (blank = all cash)", "", "For share swaps or part-cash deals — s.21B(1)", { blank: "Blank — treated as all cash" })}
     </div>
     </div>
     <div><div class="card result" id="rp-out"></div>
@@ -54,18 +56,25 @@ export function rpgt(el) {
       ${fMoney("rc-l", "Land at market value", "8,000,000")}${fMoney("rc-s", "Shares in other RPCs (acquisition price)", "0")}${fMoney("rc-o", "Other tangible assets (cash, receivables, plant)", "2,000,000")}
       <div id="rc-out"></div>
       <h3 style="margin-top:14px">Deemed price — shares held when it became an RPC</h3><p class="sub">A ÷ B × C (para 34A(2)(a))</p>
-      <div class="row2">${fNum("rc-a", "A · number of shares held", "300,000")}${fNum("rc-b", "B · total issued shares", "1,000,000")}</div>${fMoney("rc-c", "C · defined value at that date", "6,000,000")}<div id="rc-dp"></div>
+      <div class="row2">${fNum("rc-a", "A · number of shares held", "300,000", "", { int: true, max: 1e12 })}${fNum("rc-b", "B · total issued shares", "1,000,000", "", { int: true, max: 1e12 })}</div>${fMoney("rc-c", "C · defined value at that date", "6,000,000")}<div id="rc-dp"></div>
     </div>
     </div></div>`;
-  const P = { a2: ["partnership", "2022-01-10", "2026-03-20", 1000000, 20000, 400000, 12000, 38000, "land"], a3: ["citizen", "2023-06-15", "2026-08-01", 2400000, 15000, 601800, 0, 0, "rpc"], s53: ["company", "2021-03-05", "2026-06-10", 1350000, 36000, 800000, 28000, 60000, "land"] };
-  const ids = ["rp-p", "rp-ad", "rp-dd", "rp-dp", "rp-dc", "rp-ap", "rp-ac", "rp-en"];
-  let asset = "land";
+  // Workshop presets: every input field is set (rp-cash blank = all cash), so nothing stale survives from a previous case.
+  const P = { a2: ["partnership", "2022-01-10", "2026-03-20", 1000000, 20000, 400000, 12000, 38000, "", "land", "Keluarga Tan · Asset 2"], a3: ["citizen", "2023-06-15", "2026-08-01", 2400000, 15000, 601800, 0, 0, "", "rpc", "Asset 3 · Wei Ming"], s53: ["company", "2021-03-05", "2026-06-10", 1350000, 36000, 800000, 28000, 60000, "", "land", "Sdn Bhd shop lot"] };
+  const ids = ["rp-p", "rp-ad", "rp-dd", "rp-dp", "rp-dc", "rp-ap", "rp-ac", "rp-en", "rp-cash"];
+  let asset = "land", preset = null;
+  const setAsset = (v) => { asset = v; $$("#rp-seg button", el).forEach((x) => x.setAttribute("aria-pressed", x.dataset.v === asset)); };
+  const banner = () => { $("#rp-banner", el).innerHTML = preset && $("#rp-p", el).value === preset.person ? `<div class="verdict amber" role="status"><span class="bk-coin bk-coin--paper">!</span><span>Showing workshop case ${esc(preset.label)} — change disposer and amounts for your own client.</span></div>` : ""; };
   function run() {
-    const g = (id) => $("#" + id, el).value;
-    if (!g("rp-ad") || !g("rp-dd")) return;
+    const g = (id) => $("#" + id, el).value, out = $("#rp-out", el);
+    banner();
+    if (badInputs(el, out, "rp-")) return;
+    if (!g("rp-ad") || !g("rp-dd")) { out.innerHTML = `<div class="verdict info">Enter the acquisition date and the disposal date.</div>`; return; }
+    if (badYear(g("rp-ad")) || badYear(g("rp-dd"))) { out.innerHTML = `<div class="verdict no">Check the dates — the year looks wrong.</div>`; return; }
+    if (g("rp-dp").trim() === "" || g("rp-ap").trim() === "") { out.innerHTML = `<div class="verdict info">Enter the disposal price and the acquisition price (type 0 if there was none).</div>`; return; }
     if (asset === "rpc" && ["company", "llp", "trust", "foreignco"].includes(g("rp-p"))) { $("#rp-out", el).innerHTML = `<div class="verdict info"><span class="bk-coin bk-coin--paper">!</span>Not RPGT — since 1 Jan 2024 a company, LLP, trust body or co-operative selling RPC shares is within CGT, not para 34A.</div><p>Use the CGT calculator: 10% of the gain, or 2% of gross for shares bought before 2024. e-CKM within 60 days, no retention.</p><div class="btns">${goBtn("cgt", "Open the CGT calculator")}</div>${auth("inforce", "ITA s.4(aa) · CGT Guidelines 2025 para 1.5 · CGT Q&A 2024 Q17")}`; refreshIcons(); return; }
     const r = c.rpgt({ person: g("rp-p"), asset, acqDate: g("rp-ad"), dispDate: g("rp-dd"), dispPrice: num(g("rp-dp")), cash: g("rp-cash").trim() === "" ? undefined : num(g("rp-cash")), dispCosts: num(g("rp-dc")), acqPrice: num(g("rp-ap")), acqCosts: num(g("rp-ac")), enhancement: num(g("rp-en")) });
-    if (c.D(g("rp-dd")) <= c.D(g("rp-ad"))) { $("#rp-out", el).innerHTML = `<div class="verdict no">Disposal date must be after the acquisition date.</div>`; return; }
+    if (c.D(g("rp-dd")) <= c.D(g("rp-ad"))) { out.innerHTML = `<div class="verdict no">Disposal date must be after the acquisition date.</div>`; return; }
     const T = c.RPGT_TABLE[r.cat], years = (c.D(g("rp-dd")) - c.D(g("rp-ad"))) / (365.25 * 864e5);
     const tl = segbar([{ w: 3, color: C.coral100, label: T[0] + "%", sub: "Years 1–3" }, { w: 1, color: C.amber100, label: T[3] + "%", sub: "Year 4" }, { w: 1, color: C.amber100, label: T[4] + "%", sub: "Year 5" }, { w: 1.5, color: C.teal100, label: T[5] + "%", sub: "Year 6 +" }],
       { pos: Math.min(years, 6.4) / 6.5, label: `${r.yearLabel} · ${r.rate}%` }, { label: "Rate by year of disposal" });
@@ -76,9 +85,10 @@ export function rpgt(el) {
     if (r.loss) notes.push(asset === "rpc" ? "A loss on RPC shares (para 34A) is not an allowable loss — Sch 2 para 33(d)." : "Allowable loss — set it against RPGT gains (s.7).");
     if (r.person.id === "partnership") notes.push("No Sch 4 exemption for a partnership. Its cost is the partner's cost plus permitted expenses (para 35(2)), not market value at contribution.");
     if (r.cat === "I" && r.year >= 6) notes.push("0% — but still file e-CKHT within 60 days. Keep the private residence election (s.8) for a short-hold sale.");
-    if (g("rp-dd") && g("rp-dd") < "2026-01-01") notes.push(`Disposal before 2026: this tool applies the Sch 5 rates (2022 table) and the s.21B rules as they stand in 2026. Check the rate table and retention rules in force at the disposal date${g("rp-dd") < "2022-01-01" ? " — before 2022, Part I disposals in year 6 and later were taxed at 5%" : ""}.`);
+    if (g("rp-dd") < "2022-01-01") notes.push(`<span class="tag pending">CHECK</span> Disposals before 2022 used earlier Sch 5 rate tables (year 6+ rates differed) — check the table in force on the disposal date. This tool applies the Sch 5 table in force from 1 Jan 2022.`);
+    if (g("rp-dd") < "2026-01-01") notes.push(`Disposal before 2026: this tool applies the s.21B retention and remittance rules as they stand in 2026 — check the retention rules in force at the disposal date.`);
     notes.push(`The acquirer retains the lower of the whole of the money paid (cash part) and ${r.retPct}% of the price (s.21B(1)). From 1 Jan 2026, if the disposer notifies the deemed tax before remittance, the acquirer remits the lowest of those and the notified tax — here ${c.rm(r.remitIfNotified)} (Ops Guideline 2/2026).`);
-    $("#rp-out", el).innerHTML = `<span class="label">RPGT payable</span><div class="bk-hero-num">${c.rm(r.tax)}<span class="bk-unit">${r.rate}%</span></div>
+    out.innerHTML = `<span class="label">RPGT payable</span><div class="bk-hero-num">${c.rm(r.tax)}<span class="bk-unit">${r.loss ? "loss" : r.rate + "%"}</span></div>
       <div class="sub">Part ${r.cat} · ${r.yearLabel} · ${esc(r.person.label)}</div>${tl}
       <div class="kpis"><div class="kpi"><b>${c.rm(r.gain)}</b><span>Gain</span></div><div class="kpi"><b>${c.rm(r.sch4)}</b><span>Sch 4 exemption</span></div><div class="kpi"><b>${c.rm(r.retention)}</b><span>Buyer retains (${r.retPct}% cap)</span></div>
       <div class="kpi"><b>${r.refundable ? c.rm(r.refundable) + " refund" : c.rm(r.balance)}</b><span>${r.refundable ? "Retention exceeds tax — unless the deemed tax was notified" : "Balance to pay"}</span></div></div>
@@ -90,15 +100,24 @@ export function rpgt(el) {
     refreshIcons();
   }
   function rpc() {
+    const ro = $("#rc-out", el), dp = $("#rc-dp", el);
+    if (!badInputs(el, ro, ["rc-l", "rc-s", "rc-o"])) {
     const t = c.rpcTest(num($("#rc-l", el).value), num($("#rc-s", el).value), num($("#rc-o", el).value), $("#rc-ctl", el).checked);
-    $("#rc-out", el).innerHTML = `${gauge(t.ratio, 0.75, "RPC ratio")}<div class="verdict ${t.isRPC ? "no" : "ok"}">${t.isRPC ? "RPC — a controlled company with the ratio at least 75%. Individuals and partnerships selling its shares pay RPGT under para 34A; companies, LLPs, trusts and co-ops pay CGT." : !t.controlled ? "Not an RPC — not a controlled company, whatever the ratio (para 34A(6))." : "Not an RPC at this test date."}</div><div class="sub">Status ends only on a disposal that takes the ratio below 75% — cash growth alone does not end it (para 34A(6) proviso).</div>`;
-    $("#rc-dp", el).innerHTML = `<div class="kpi" style="margin-top:6px"><b>${c.rm(c.rpcDeemedPrice(num($("#rc-a", el).value), num($("#rc-b", el).value), num($("#rc-c", el).value)))}</b><span>Deemed acquisition price, at the date it became an RPC</span></div>`;
+    if (t.empty) ro.innerHTML = `<div class="verdict info">Enter the company's land, RPC shares and other tangible assets.</div>`;
+    else {
+    const shown = `${t.pct2.toFixed(2)}%`; // truncated to 2 dp — 74.99% never shows as 75%
+    const head = t.ratio >= 0.75 ? "Margin above 75% — land at market value would have to fall by more than this (other assets unchanged)" : "Headroom to 75% — this much more land at market value (other assets unchanged) would make it an RPC";
+    ro.innerHTML = `${gauge(Math.floor(t.ratio * 1000 + 1e-7) / 1000, 0.75, "RPC ratio " + shown)}<div class="kpis"><div class="kpi"><b>${shown}</b><span>Land + RPC shares ÷ total tangible assets (2 dp, never rounded up)</span></div><div class="kpi"><b>${c.rm(t.headroom)}</b><span>${head}</span></div></div><div class="verdict ${t.isRPC ? "no" : "ok"}">${t.isRPC ? "RPC — a controlled company with the ratio at least 75%. Individuals and partnerships selling its shares pay RPGT under para 34A; companies, LLPs, trusts and co-ops pay CGT." : !t.controlled ? "Not an RPC — not a controlled company, whatever the ratio (para 34A(6))." : "Not an RPC at this test date."}</div><div class="sub">Status ends only on a disposal that takes the ratio below 75% — cash growth alone does not end it (para 34A(6) proviso).</div>`; } }
+    if (badInputs(el, dp, ["rc-a", "rc-b", "rc-c"])) return;
+    const d = c.rpcDeemed(num($("#rc-a", el).value), num($("#rc-b", el).value), num($("#rc-c", el).value));
+    dp.innerHTML = d.error ? `<div class="verdict info" style="margin-top:6px">${esc(d.error)}</div>` : `<div class="kpi" style="margin-top:6px"><b>${c.rm(d.price)}</b><span>Deemed acquisition price, at the date it became an RPC (${(Math.floor(d.share * 10000 + 1e-7) / 100).toFixed(2)}% of C)</span></div>`;
   }
   el.addEventListener("input", (e) => { if (e.target.id.startsWith("rc-")) rpc(); else run(); });
   el.addEventListener("change", (e) => { if (e.target.id.startsWith("rc-")) rpc(); else run(); });
   bindSeg($("#rp-seg", el), (v) => { asset = v; run(); });
   $$("[data-pre]", el).forEach((b) => b.addEventListener("click", () => { const p = P[b.dataset.pre]; ids.forEach((id, k) => { $("#" + id, el).value = typeof p[k] === "number" ? p[k].toLocaleString("en-MY") : p[k]; });
-    asset = p[8]; $$("#rp-seg button", el).forEach((x) => x.setAttribute("aria-pressed", x.dataset.v === asset)); run(); }));
+    setAsset(p[9]); preset = { person: p[0], label: p[10] }; run(); }));
+  $("#rp-reset", el).addEventListener("click", () => { ids.forEach((id) => { $("#" + id, el).value = id === "rp-p" ? "citizen" : ""; }); setAsset("land"); preset = null; run(); });
   run(); rpc();
 }
 
@@ -117,12 +136,24 @@ export function cgt(el) {
   const P = { a3: ["llp", "2018-01-01", "2026-08-01", 2400000, 15000, 501500], kc: ["company", "2019-05-01", "2026-05-01", 3000000, 0, 1000000] };
   function run() {
     const g = (id) => $("#" + id, el).value;
+    if (badInputs(el, $("#cg-out", el), "cg-")) return;
+    if (/^\d{4}-\d{2}-\d{2}$/.test(g("cg-ad")) && /^\d{4}-\d{2}-\d{2}$/.test(g("cg-dd")) && (badYear(g("cg-ad")) || badYear(g("cg-dd")))) { $("#cg-out", el).innerHTML = `<div class="verdict no">Check the dates — the year looks wrong.</div>`; return; }
     const r = c.cgt({ person: g("cg-p"), acqDate: g("cg-ad"), dispDate: g("cg-dd"), consideration: num(g("cg-g")), dispCosts: num(g("cg-dc")), acqPrice: num(g("cg-ap")) });
     const out = $("#cg-out", el);
     if (!/^\d{4}-\d{2}-\d{2}$/.test(g("cg-ad")) || !/^\d{4}-\d{2}-\d{2}$/.test(g("cg-dd"))) { out.innerHTML = `<div class="verdict info">Enter both the acquisition date and the disposal date.</div>`; return; }
     if (!r.inside) { out.innerHTML = `<div class="verdict info"><span class="bk-coin bk-coin--paper">!</span>Outside CGT — individuals, sole proprietors and partnerships of individuals are not chargeable persons.</div><p>If the company is an RPC, the sale is RPGT under para 34A instead.</p><div class="btns">${goBtn("rpgt", "Check RPGT")}</div>${auth("inforce", "ITA s.4(aa) · CGT Guidelines 2025 para 4 · Q&A Q2")}`; refreshIcons(); return; }
     if (r.badDates) { out.innerHTML = `<div class="verdict no">Disposal date must be after the acquisition date.</div>`; return; }
     if (r.preCGT) { out.innerHTML = `<div class="verdict info">Disposal before 1 Jan 2024 — not within CGT (CGT applies to disposals from 1 Jan 2024).</div>${auth("inforce", "Finance (No. 2) Act 2023 · CGT Guidelines 2025 para 1.2")}`; return; }
+    const dueTxt = r.due && !isNaN(r.due) ? c.fmtDate(r.due) : "—";
+    const lossNote = `<div class="note">Losses: same-year set-off against CGT gains, then 10 YAs — never against business income (s.65E(5)–(6); CGT Guidelines 2025 paras 10.1–10.3).</div>`;
+    if (r.nil) { // loss or nil gain: no CGT, no 2% election, no break-even chart
+      out.innerHTML = `${r.exemptWindow ? `<div class="verdict ok">Disposal 1 Jan – 29 Feb 2024 — exempt (P.U.(A) 410/2023).</div>` : ""}<span class="label">CGT payable</span><div class="bk-hero-num">${c.rm(0)}</div>
+        <div class="verdict info" style="margin-top:12px"><span class="bk-coin bk-coin--paper">!</span><span>${r.loss ? `Capital loss ${c.rm(-r.gain)}` : "No gain"} — no CGT; e-CKM still due by ${dueTxt}; do not elect 2%${r.preAcq ? ` (it would charge ${c.rm(r.opt2)} on a disposal with no gain)` : ""}.</span></div>
+        <div class="kpis"><div class="kpi"><b>${c.rm(r.gain)}</b><span>${r.loss ? "Loss" : "Gain"}</span></div><div class="kpi"><b>${dueTxt}</b><span>e-CKM — 60 days, even with a loss</span></div><div class="kpi"><b>None</b><span>Retention under CGT</span></div></div>
+        ${r.loss ? lossNote : ""}${auth("inforce", r.authority)}<div class="btns" id="cg-b"></div>`;
+      $("#cg-b", el).append(copyBtn(() => `CGT — ${r.person.label}\nAcquired ${g("cg-ad")} · disposed ${g("cg-dd")}\nGross consideration ${c.rm(num(g("cg-g")))} · disposal costs ${c.rm(num(g("cg-dc")))} · acquisition price + costs ${c.rm(num(g("cg-ap")))}\n${r.loss ? "Capital loss " + c.rm(-r.gain) : "No gain"} — no CGT; do not elect 2%\ne-CKM still due by ${dueTxt}\nAuthority: ${r.authority}`), printBtn());
+      refreshIcons(); return;
+    }
     const gp = num(g("cg-g")), gainPct = gp > 0 ? Math.max(0, r.gain) / gp : 0;
     const bars = [{ label: "10% of gain", value: r.opt10, color: C.blue, pop: r.best === "10%" }];
     if (r.opt2 !== null) bars.push({ label: "2% of gross", value: r.opt2, color: C.teal, pop: r.best === "2%" });
@@ -132,7 +163,7 @@ export function cgt(el) {
       ${columns(bars, { label: "CGT options compared" })}
       ${r.opt2 !== null ? `<h3>Where the lines cross</h3><p class="sub">Tax as % of price. Your gain is <b>${pct(gainPct, 1)}</b> of the price — above 20%, elect 2%.</p>${lines([{ color: C.blue, points: pts10 }, { color: C.teal, points: pts2, dash: true }], { label: "Break-even chart", xfmt: (v) => v + "%", yfmt: (v) => v.toFixed(1) + "%", markers: [{ x: 20, label: "20% break-even", color: C.muted }, { x: Math.min(60, gainPct * 100), label: "You", color: C.coral }] })}<div class="legend"><span><i style="background:var(--bk-blue)"></i>10% of gain</span><span><i style="background:var(--bk-teal)"></i>2% of gross</span></div>` : ""}
       <div class="kpis"><div class="kpi"><b>${c.rm(r.gain)}</b><span>Gain</span></div><div class="kpi"><b>${r.due && !isNaN(r.due) ? c.fmtDate(r.due) : "—"}</b><span>e-CKM and payment — 60 days</span></div><div class="kpi"><b>None</b><span>Retention under CGT</span></div></div>
-      <div class="note">Losses: same-year set-off against CGT gains, then 10 YAs — never against business income (s.65E(5)–(6)).</div>${auth("inforce", r.authority)}<div class="btns" id="cg-b"></div>`;
+      ${lossNote}${auth("inforce", r.authority)}<div class="btns" id="cg-b"></div>`;
     $("#cg-b", el).append(copyBtn(() => `CGT — ${r.person.label}\nAcquired ${g("cg-ad")} · disposed ${g("cg-dd")}\nGain ${c.rm(r.gain)}\nOption 10% of gain ${c.rm(r.opt10)}${r.opt2 !== null ? `\nOption 2% of gross ${c.rm(r.opt2)}` : ""}\nCGT ${c.rm(r.tax)} (${r.best})\ne-CKM and payment by ${r.due && !isNaN(r.due) ? c.fmtDate(r.due) : "—"}\nAuthority: ${r.authority}`), printBtn());
     refreshIcons();
   }
@@ -152,7 +183,7 @@ export function stamp(el) {
         ${fSel("sp-b", "Buyer", [["local", "Citizen / PR / Malaysian company"], ["foreign_res", "Foreign buyer — residential"], ["foreign_nonres", "Foreign buyer — non-residential"]], "local")}
         ${fSel("sp-r", "Relief", [["none", "No relief"], ["firsthome", "First home — citizen, up to RM500,000"], ["firsthome2027", "First home 2027–2030 (SD-01, proposed)"], ["family", "Parent–child / grandparent–grandchild (citizens)"], ["spouse", "Husband–wife gift"]], "none")}
         <div class="note">Stamp within 30 days of execution. Exemption and remission claims always go through formal assessment.</div></div><div class="card result" id="sp-out"></div></div>`;
-      const run = () => { const r = c.stampProperty({ price: num($("#sp-p").value), mv: num($("#sp-m").value), buyer: $("#sp-b").value, relief: $("#sp-r").value });
+      const run = () => { if (badInputs(body, $("#sp-out"))) return; const r = c.stampProperty({ price: num($("#sp-p").value), mv: num($("#sp-m").value), buyer: $("#sp-b").value, relief: $("#sp-r").value });
         const parts = r.ladder.parts, cols = [C.blue100, C.teal100, C.amber100, C.coral100];
         const bar = $("#sp-b").value === "local" && parts.length ? segbar(parts.map((p, i) => ({ w: Math.max(p.amount, r.value * 0.06), color: cols[i], label: p.rate + "%", sub: c.rm(p.duty) })), null, { label: "Duty by band", h: 80 }) : "";
         const tag = $("#sp-r").value === "firsthome2027" ? "proposed" : "inforce";
@@ -164,16 +195,16 @@ export function stamp(el) {
       body.addEventListener("input", run); body.addEventListener("change", run); run(); },
     shares: (body) => { body.innerHTML = `<div class="grid two"><div class="card">${WARN}${fMoney("ss-p", "Price in the share sale agreement", "2,400,000")}${fMoney("ss-v", "Value — NTA with land at market value", "0", "LHDN charges on the higher")}
         <div class="note">RPC shares: 0.3% duty against up to 4% on the land — which is why para 34A brings the gain back into RPGT.</div></div><div class="card result" id="ss-out"></div></div>`;
-      const run = () => { const r = c.stampShares(num($("#ss-p").value), num($("#ss-v").value)); const land = c.ladderProperty(r.base).duty;
+      const run = () => { if (badInputs(body, $("#ss-out"))) return; const r = c.stampShares(num($("#ss-p").value), num($("#ss-v").value)); const land = c.ladderProperty(r.base).duty;
         $("#ss-out").innerHTML = `<span class="label">Stamp duty — form DS2</span><div class="bk-hero-num">${c.rm(r.duty)}<span class="bk-unit">0.3%</span></div><div class="sub">On ${c.rm(r.base)} · paid by the buyer</div>
           ${columns([{ label: "Shares 0.3%", value: r.duty, color: C.teal, pop: true }, { label: "Same value as land", value: land, color: C.coral }], { label: "Shares vs land duty" })}${auth("inforce", r.authority)}`; };
       body.addEventListener("input", run); run(); },
     loan: (body) => { body.innerHTML = `<div class="grid two"><div class="card">${WARN}${fMoney("sl-a", "Loan amount", "650,100")}<div class="note">Hire purchase and Shariah goods financing: RM10 (from 1 Jan 2025). FX loans from Malaysian banks: cap RM2,000 / RM5,000 proposed (SD-04).</div></div><div class="card result" id="sl-out"></div></div>`;
-      const run = () => { const r = c.stampLoan(num($("#sl-a").value)); $("#sl-out").innerHTML = `<span class="label">Loan agreement duty</span><div class="kpis"><div class="kpi"><b>${c.rm(r.now)}</b><span>Now — RM5 per RM1,000 or part</span></div><div class="kpi"><b>${c.rm(r.proposed, 2)}</b><span>From 1 Jan 2027 — exact 0.5% (LB-04)</span></div></div><div class="note">Time refinancings and new FX facilities for execution on or after 1 Jan 2027.</div>${auth("inforce", "Now: Stamp Act First Sch Item 27 — RM5 per RM1,000 or part")}${auth("proposed", "From 1 Jan 2027: exact 0.5% (Budget 2027 LB-04)")}`; };
+      const run = () => { if (badInputs(body, $("#sl-out"))) return; const r = c.stampLoan(num($("#sl-a").value)); $("#sl-out").innerHTML = `<span class="label">Loan agreement duty</span><div class="kpis"><div class="kpi"><b>${c.rm(r.now)}</b><span>Now — RM5 per RM1,000 or part</span></div><div class="kpi"><b>${c.rm(r.proposed, 2)}</b><span>From 1 Jan 2027 — exact 0.5% (LB-04)</span></div></div><div class="note">Time refinancings and new FX facilities for execution on or after 1 Jan 2027.</div>${auth("inforce", "Now: Stamp Act First Sch Item 27 — RM5 per RM1,000 or part")}${auth("proposed", "From 1 Jan 2027: exact 0.5% (Budget 2027 LB-04)")}`; };
       body.addEventListener("input", run); run(); },
     late: (body) => { body.innerHTML = `<div class="grid two"><div class="card">${fMoney("sk-d", "Duty", "10,000")}<div class="row2">${fDate("sk-e", "Execution date", "2026-03-01")}${fDate("sk-s", "Stamped on", "2026-06-15")}</div>
         <div class="note">Self-assessment offences: no return RM200–RM2,000 (s.72C); incorrect return — penalty equal to the duty undercharged (s.72D). The Collector may reduce or remit (s.47A(2)).</div></div><div class="card result" id="sk-out"></div></div>`;
-      const run = () => { const e = $("#sk-e").value, s = $("#sk-s").value; if (!e || !s) return; const r = c.stampPenalty(num($("#sk-d").value), e, s);
+      const run = () => { if (badInputs(body, $("#sk-out"))) return; const e = $("#sk-e").value, s = $("#sk-s").value; if (!e || !s) return; const r = c.stampPenalty(num($("#sk-d").value), e, s);
         const span = (c.D(s) - c.D(e)) / 864e5, total = Math.max(span, 150);
         const bar = segbar([{ w: 30, color: C.teal100, label: "On time", sub: "Day 1–30" }, { w: (c.addMonths(r.due, 3) - r.due) / 864e5, color: C.amber100, label: "10% / RM50", sub: "Up to 3 months late" }, { w: Math.max(20, total - 30 - (c.addMonths(r.due, 3) - r.due) / 864e5), color: C.coral100, label: "20% / RM100", sub: "Later" }],
           { pos: Math.min(span, total) / total, label: `Stamped day ${Math.round(span)}` }, { label: "Late stamping ladder" });
