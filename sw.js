@@ -1,5 +1,5 @@
 // Offline cache — the eight tools work after the first visit, even without signal. Live polls still need internet.
-const CACHE = "tct26-v1.4.6";
+const CACHE = "tct26-v1.4.7";
 // Phone precache. presenter.html, js/presenter.js and js/vendor/qrcode.js are left out (Keith's laptop only) — cached on demand if opened.
 const FILES = [
 "./",

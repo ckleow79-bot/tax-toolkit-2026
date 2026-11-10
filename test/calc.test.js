@@ -118,4 +118,6 @@ eq("NB: FY2022 revenue -> note shown", !!nb({ turnover: 2e6, firstYear: 4e6, com
 eq("NB: commenced 2022 -> note shown", !!nb({ turnover: 0, firstYear: 4e6, commence: "2022-12-31" }).note, true);
 eq("NB: commenced 1 Feb 2027, RM4m, passes tests -> 1 Jan 2029", nb({ turnover: 0, firstYear: 4e6, commence: "2027-02-01" }).start, "2029-01-01");
 eq("NB: reached RM3m YA2028 -> 1 Jan 2030", nb({ turnover: 0, firstYear: 1e6, commence: "2027-02-01", reachedYA: 2028 }).start, "2030-01-01");
+{ const fs = await import("node:fs"); const src = ["js/ui.js", "js/tabs1.js", "js/tabs2.js", "js/calc.js"].map((f) => fs.readFileSync(new URL("../" + f, import.meta.url), "utf8")).join("\n");
+  eq("as-at date is interpolated, not literal", /"[^"`\n]*\$\{AS_AT\}/.test(src), false); }
 console.log(`\n${pass} passed, ${fail} failed`); if (fail) process.exit(1);

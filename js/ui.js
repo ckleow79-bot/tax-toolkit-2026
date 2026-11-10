@@ -91,7 +91,7 @@ export const segVal = (el) => $("button[aria-pressed=true]", el).dataset.v;
 
 export function copyBtn(getText) {
   const b = h(`<button class="btn ghost">${icon("copy")}Copy result</button>`);
-  b.addEventListener("click", async () => { const t = getText() + "\n\nTax Compliance Toolkit 2026 · position as at ${AS_AT} · training tool, not tax advice"; try { await navigator.clipboard.writeText(t); toast("Copied — paste into your working paper"); } catch (e) { prompt("Copy this:", t); } });
+  b.addEventListener("click", async () => { const t = getText() + `\n\nTax Compliance Toolkit 2026 · position as at ${AS_AT} · training tool, not tax advice`; try { await navigator.clipboard.writeText(t); toast("Copied — paste into your working paper"); } catch (e) { prompt("Copy this:", t); } });
   return b;
 }
 export const printBtn = () => { const b = h(`<button class="btn ghost">${icon("printer")}Print</button>`); b.addEventListener("click", () => window.print()); return b; };
