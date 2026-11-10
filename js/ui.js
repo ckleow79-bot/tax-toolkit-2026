@@ -1,4 +1,5 @@
 // UI + visualisation helpers (SVG, tokens via CSS variables).
+import { AS_AT } from "./calc.js";
 export const $ = (s, r = document) => r.querySelector(s);
 export const $$ = (s, r = document) => [...r.querySelectorAll(s)];
 export const h = (html) => { const t = document.createElement("template"); t.innerHTML = html.trim(); return t.content.firstElementChild; };
@@ -13,6 +14,8 @@ export function parseNum(v, o = {}) {
   const raw = String(v ?? "").trim();
   if (!raw) return { ok: true, empty: true, value: 0 };
   if (raw.length > 40) return bad("Too long — check the number");
+  const nc = raw.replace(/^rm\s*/i, "").trim();
+  if (nc.includes(",") && !/^[+-]?\(?\d{1,3}(,\d{3})+(\.\d+)?\)?\s*[a-z%]*\.?$/i.test(nc)) return bad("Check the commas — use groups of three digits, e.g. 1,250,000");
   let s = raw.replace(/^rm\s*/i, "").replace(/,/g, "").replace(/(\d)\s+(?=\d)/g, "$1").trim(); if (!o.money) s = s.replace(/\s*%$/, "");
   if (/^[+-]?(\d+\.?\d*|\.\d+)\s*e\s*[+-]?\d+$/i.test(s)) return bad("Type the full number (e.g. 1,000,000 or 1m) — not scientific notation like 1e9");
   if (/^-|^\(.*\)$/.test(s)) return bad(o.money ? "An amount cannot be negative — enter it as a positive number" : "Cannot be negative");
@@ -88,7 +91,7 @@ export const segVal = (el) => $("button[aria-pressed=true]", el).dataset.v;
 
 export function copyBtn(getText) {
   const b = h(`<button class="btn ghost">${icon("copy")}Copy result</button>`);
-  b.addEventListener("click", async () => { const t = getText() + "\n\nTax Compliance Toolkit 2026 · position as at 7 Nov 2026 · training tool, not tax advice"; try { await navigator.clipboard.writeText(t); toast("Copied — paste into your working paper"); } catch (e) { prompt("Copy this:", t); } });
+  b.addEventListener("click", async () => { const t = getText() + "\n\nTax Compliance Toolkit 2026 · position as at ${AS_AT} · training tool, not tax advice"; try { await navigator.clipboard.writeText(t); toast("Copied — paste into your working paper"); } catch (e) { prompt("Copy this:", t); } });
   return b;
 }
 export const printBtn = () => { const b = h(`<button class="btn ghost">${icon("printer")}Print</button>`); b.addEventListener("click", () => window.print()); return b; };

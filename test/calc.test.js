@@ -11,8 +11,10 @@ eq("A2 gain", a2.gain, 530000); eq("A2 sch4", a2.sch4, 0); eq("A2 year", a2.year
 eq("A2 return due", c.iso(a2.returnDue), "2026-05-19"); eq("A2 pay due", c.iso(a2.payDue), "2026-06-18");
 // Asset 3 Wei Ming RPC shares
 let a3 = c.rpgt({ person: "citizen", asset: "rpc", acqDate: "2023-06-15", dispDate: "2026-08-01", dispPrice: 2400000, dispCosts: 15000, acqPrice: 601800 });
-eq("A3 gain", a3.gain, 1783200); eq("A3 sch4", a3.sch4, 178320); eq("A3 year", a3.year, 4); eq("A3 tax", a3.tax, 320976); eq("A3 retention", a3.retention, 72000);
+eq("A3 gain", a3.gain, 1798200); eq("A3 sch4", a3.sch4, 179820); eq("A3 year", a3.year, 4); eq("A3 tax", a3.tax, 323676); eq("A3 costs ignored", a3.costsIgnored, 15000); eq("A3 retention", a3.retention, 72000);
 eq("A3 return", c.iso(a3.returnDue), "2026-09-30"); eq("A3 pay", c.iso(a3.payDue), "2026-10-30"); eq("A3 form", a3.form, "e-CKHT 1B");
+{ const lp = c.rpgt({ person: "citizen", asset: "land", acqDate: "2020-02-29", dispDate: "2023-03-01", dispPrice: 1e6, acqPrice: 5e5 }); eq("leap-day flag", lp.leapDay, true); }
+eq("land keeps selling costs", c.rpgt({ person: "citizen", asset: "land", acqDate: "2020-01-01", dispDate: "2026-01-02", dispPrice: 1e6, dispCosts: 10000, acqPrice: 5e5 }).dispPriceNet, 990000);
 // Slide 53 Sdn Bhd shop lot
 let s53 = c.rpgt({ person: "company", acqDate: "2021-03-05", dispDate: "2026-06-10", dispPrice: 1350000, dispCosts: 36000, acqPrice: 800000, acqCosts: 28000, enhancement: 60000 });
 eq("S53 gain", s53.gain, 426000); eq("S53 year6 rate", s53.rate, 10); eq("S53 tax", s53.tax, 42600); eq("S53 retention 3%", s53.retention, 40500);
@@ -73,13 +75,15 @@ eq("RPC not controlled", c.rpcTest(800, 0, 200, false).isRPC, false);
 for (const [inp, exp] of [["850k", 850000], ["1.2m", 1200000], ["3.3 million", 3300000], ["RM 1,200,000.50", 1200000.5], ["1,000,000", 1000000], ["rm4.2 million", 4200000], ["2bn", 2e9]]) eq("parse " + inp, parseNum(inp, { money: true }).value, exp);
 for (const inp of ["1e9", "abc", "😀", "-5", "20000000000", "12x"]) eq("reject " + inp, parseNum(inp, { money: true }).ok, false);
 eq("blank is empty", parseNum("", { money: true }).empty, true);
+eq("reject 1,2,3", parseNum("1,2,3", { money: true }).ok, false); eq("accept 1,250,000.50", parseNum("1,250,000.50", { money: true }).value, 1250000.5); eq("accept RM 1,200k", parseNum("RM 1,200k", { money: true }).value, 1200000);
 eq("int check", parseNum("1.5", { int: true }).ok, false); eq("max check", parseNum("8", { max: 7 }).ok, false); eq("percent sign", parseNum("10%").value, 10);
 // e-Invoice: empty turnover prompts, GL v4.8 para 1.5 new-business path
 eq("einv blank turnover -> missing", c.einvStart({ turnover: null }).missing, true);
 eq("einv blank turnover not exempt", !!c.einvStart({ turnover: null }).exempt, false);
-eq("new biz 2027 >=3m -> commencement", c.einvStart({ turnover: 0, commence: "2027-03-15", firstYear: 4e6 }).start, "2027-03-15");
-eq("new biz Mar 2026 >=3m -> 1 Jul 2026", c.einvStart({ turnover: 0, commence: "2026-03-01", firstYear: 3e6 }).start, "2026-07-01");
-eq("new biz Sep 2026 >=3m -> commencement", c.einvStart({ turnover: 0, commence: "2026-09-01", firstYear: 5e6 }).start, "2026-09-01");
+eq("new biz 2027 >=3m -> 1 Jan 2029 (FAQ Q14(b))", c.einvStart({ turnover: 0, commence: "2027-03-15", firstYear: 4e6 }).start, "2029-01-01");
+eq("new biz Mar 2026 >=3m -> 1 Jan 2028 (Warung Salima)", c.einvStart({ turnover: 0, commence: "2026-01-01", firstYear: 3.12e6 }).start, "2028-01-01");
+eq("new biz 2026 -> GL 1.5 conflict note", /GL v4.8 para 1.5/.test(c.einvStart({ turnover: 0, commence: "2026-01-01", firstYear: 3.12e6 }).note || ""), true);
+eq("new biz Sep 2026 >=3m -> 1 Jan 2028", c.einvStart({ turnover: 0, commence: "2026-09-01", firstYear: 5e6 }).start, "2028-01-01");
 eq("new biz 2024 >=3m -> 1 Jul 2026", c.einvStart({ turnover: 0, commence: "2024-05-01", firstYear: 3.5e6 }).start, "2026-07-01");
 eq("new biz 2027 <3m reached YA2028 -> 1 Jan 2030", c.einvStart({ turnover: 0, commence: "2027-03-15", firstYear: 1e6, reachedYA: 2028 }).start, "2030-01-01");
 eq("new biz <3m never reached -> exempt", c.einvStart({ turnover: 0, commence: "2027-03-15", firstYear: 1e6 }).exempt, true);
@@ -90,6 +94,7 @@ eq("tests off by default: RM1.8m -> exempt", c.einvStart({ turnover: 1.8e6 }).ex
 eq("SVDP reversed", c.svdpMonths("2026-08", "2025-07", null, "2026-11-05").reversed, true);
 { const r = c.svdpMonths("2019-01", "2026-10", null, "2026-11-05"); eq("SVDP 60 cap", r.capped, true); eq("SVDP 60 count", r.count, 60); }
 eq("SVDP before start not counted", c.svdpMonths("2024-11", "2025-02", "2025-01-15", "2026-11-05").count, 2);
+{ const r = c.svdpMonths("2020-01", "2026-11", "2025-01-01", "2026-11-10"); eq("SVDP cap ignores pre-start months", r.count, 23); eq("SVDP skipped", r.skipped, 60); eq("SVDP not capped", r.capped, false); }
 // RPC ratio display and headroom
 { const t = c.rpcTest(7499, 0, 2501); eq("RPC 74.99% shown 74.99", t.pct2, 74.99); eq("RPC 74.99% not RPC", t.isRPC, false); }
 { const t = c.rpcTest(749999, 0, 250001); eq("RPC 74.9999% truncates to 74.99", t.pct2, 74.99); }
@@ -111,6 +116,6 @@ const nb = (o) => c.einvStart({ testA: false, testB: false, testC: false, reache
 eq("NB: FY2022 revenue -> first-year ignored (exempt)", nb({ turnover: 2e6, firstYear: 4e6, commence: "2024-03-01" }).exempt, true);
 eq("NB: FY2022 revenue -> note shown", !!nb({ turnover: 2e6, firstYear: 4e6, commence: "2024-03-01" }).note, true);
 eq("NB: commenced 2022 -> note shown", !!nb({ turnover: 0, firstYear: 4e6, commence: "2022-12-31" }).note, true);
-eq("NB: commenced 1 Feb 2027, RM4m -> 1 Feb 2027", nb({ turnover: 0, firstYear: 4e6, commence: "2027-02-01" }).start, "2027-02-01");
+eq("NB: commenced 1 Feb 2027, RM4m, passes tests -> 1 Jan 2029", nb({ turnover: 0, firstYear: 4e6, commence: "2027-02-01" }).start, "2029-01-01");
 eq("NB: reached RM3m YA2028 -> 1 Jan 2030", nb({ turnover: 0, firstYear: 1e6, commence: "2027-02-01", reachedYA: 2028 }).start, "2030-01-01");
 console.log(`\n${pass} passed, ${fail} failed`); if (fail) process.exit(1);

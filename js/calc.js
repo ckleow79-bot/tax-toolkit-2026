@@ -1,7 +1,7 @@
 // Tax Compliance Toolkit 2026 — calculation engine (pure functions, no DOM).
-// Position as at 7 Nov 2026. Every rule mirrors the training deck; authority in each result.
+// Position as at 10 Nov 2026. Every rule mirrors the training deck; authority in each result.
 
-export const AS_AT = "7 Nov 2026";
+export const AS_AT = "10 Nov 2026";
 
 // ---------- dates ----------
 export const D = (s) => { const [y, m, d] = s.split("-").map(Number); const dt = new Date(0); dt.setUTCFullYear(y, m - 1, d); dt.setUTCHours(0, 0, 0, 0); return dt; }; // setUTCFullYear: year 0050 stays 50 AD, not 1950
@@ -45,7 +45,9 @@ export function rpgt(i) {
   const p = RPGT_PERSONS.find((x) => x.id === i.person);
   const acq = D(i.acqDate), disp = D(i.dispDate);
   const year = holdingYear(acq, disp);
-  const dispPrice = i.dispPrice - (i.dispCosts || 0);
+  const rpcShares = i.asset === "rpc"; // para 34A(4): disposal price = consideration, "notwithstanding paragraph 5" — no selling costs (NPC Resources; PF Sdn Bhd)
+  const costsIgnored = rpcShares && (i.dispCosts || 0) > 0 ? i.dispCosts : 0;
+  const dispPrice = rpcShares ? i.dispPrice : i.dispPrice - (i.dispCosts || 0);
   const acqPrice = i.acqPrice + (i.acqCosts || 0) + (i.enhancement || 0);
   const gain = dispPrice - acqPrice;
   const sch4 = p.individual && gain > 0 ? Math.min(gain, Math.max(10000, r2(gain * 0.1))) : 0;
@@ -56,11 +58,11 @@ export function rpgt(i) {
   const cash = i.cash === undefined || i.cash === null || isNaN(i.cash) ? i.dispPrice : i.cash;
   const retention = r2(Math.min(cash, i.dispPrice * retPct / 100)); // s.21B(1): lower of the whole of the money (cash part) and the %
   return {
-    person: p, cat: p.cat, year, yearLabel: yearLabel(year), dispPriceNet: dispPrice, acqPriceTotal: acqPrice, gain, sch4, chargeable, rate, tax,
+    person: p, cat: p.cat, year, yearLabel: yearLabel(year), dispPriceNet: dispPrice, costsIgnored, leapDay: acq.getUTCMonth() === 1 && acq.getUTCDate() === 29, acqPriceTotal: acqPrice, gain, sch4, chargeable, rate, tax,
     retPct, retention, remitIfNotified: r2(Math.min(retention, tax)), balance: r2(tax - Math.min(tax, retention)), refundable: r2(Math.max(0, retention - tax)),
     returnDue: addDays(disp, 60), payDue: addDays(disp, 90),
     form: i.asset === "rpc" ? "e-CKHT 1B" : "e-CKHT 1A", loss: gain < 0,
-    authority: "RPGTA Sch 2 paras 4–7, Sch 4 para 2, Sch 5 Part " + p.cat + ", s.21B · Ops Guideline 2/2026",
+    authority: "RPGTA Sch 2 paras 4–7" + (rpcShares ? ", 34A(4)" : "") + ", Sch 4 para 2, Sch 5 Part " + p.cat + ", s.21B(1)–(1B), (1D) · Ops Guideline 2/2026",
   };
 }
 
@@ -108,7 +110,7 @@ export function cgt(i) {
   return {
     person: p, inside: p.inside, preAcq, exemptWindow, badDates, preCGT, gain, loss: gain < 0, nil: gain <= 0, opt10, opt2, best, tax: exemptWindow || preCGT || badDates ? 0 : (best === "2%" ? opt2 : opt10),
     breakEvenGain: r2(i.consideration * 0.2), due: addDays(disp, 60),
-    authority: "ITA s.4(aa), s.65E, Sch 1 Part XXI · CGT Guidelines 2025 para 15 (rate), para 16 (e-CKM and payment in 60 days)",
+    authority: "ITA s.4(aa), s.65E, Sch 1 Part XXI · CGT Guidelines (21 Sep 2026) para 15 (rate), para 16 (e-CKM and payment in 60 days)",
   };
 }
 
@@ -179,7 +181,7 @@ export function einvStart(i) {
     if (!i.commence) return { phase: null, start: null, missing: true, why: "First-year turnover is RM3m or more — enter the commencement date to apply the new-business rule (GL v4.8 para 1.5).", path: steps };
     const cy = D(i.commence).getUTCFullYear();
     if (cy >= 2023 && cy <= 2025) return { phase: null, start: "2026-07-01", newBiz: true, why: `New business commenced in ${cy} with first-year turnover of RM3m or more — 1 Jul 2026 (GL v4.8 para 1.5)`, path: steps };
-    if (cy >= 2026) { const s = later("2026-07-01", i.commence); return { phase: null, start: s, newBiz: true, why: `New business commenced ${fmtDate(D(i.commence))} with first-year turnover of RM3m or more — the later of 1 Jul 2026 and the commencement date (GL v4.8 para 1.5)`, path: steps }; }
+    if (cy >= 2026) { const s = `${cy + 2}-01-01`; return { phase: null, start: s, newBiz: true, conflict: true, why: `New business commenced ${fmtDate(D(i.commence))}, passes tests (a)–(c), RM3m or more in its first YA (YA${cy}) — 1 January of the second year after: ${fmtDate(D(s))} (FAQ Q14(b), Warung Salima)`, note: `GL v4.8 para 1.5 read literally gives 1 Jul 2026 or the commencement date (here ${fmtDate(D(later("2026-07-01", i.commence)))}) — the FAQ and the Guideline differ. Get LHDN's written confirmation for a large new starter.`, path: steps }; }
   }
   steps.push("grow");
   if (i.reachedYA) {
@@ -201,9 +203,11 @@ export function svdpMonths(first, last, startIso, nowIso) {
   const f = D(first + "-01"), t = D(last + "-01"), lab = (d) => `${MON[d.getUTCMonth()]} ${d.getUTCFullYear()}`;
   if (t < f) return { months: [], count: 0, reversed: true, err: `The last month (${lab(t)}) is before the first month (${lab(f)}) — swap them.` };
   const now = D(nowIso.slice(0, 7) + "-01"), start = startIso ? D(startIso) : null, out = [];
-  let d = f, capped = false;
+  // Months before the client's start month are skipped outright, so the 60-month cap applies to real gap months only.
+  let d = f, capped = false, skipped = 0;
+  if (start) { const sm = D(startIso.slice(0, 7) + "-01"); while (d < sm && d <= t) { skipped++; d = addMonths(d, 1); } }
   while (d <= t) { if (out.length >= 60) { capped = true; break; } out.push({ d, pre: !!start && addMonths(d, 1) <= start, future: d > now }); d = addMonths(d, 1); }
-  return { months: out, capped, future: out.filter((m) => m.future).length, count: out.filter((m) => !m.pre && !m.future).length };
+  return { months: out, capped, skipped, future: out.filter((m) => m.future).length, count: out.filter((m) => !m.pre && !m.future).length };
 }
 export const exposure = (count) => ({ min: count * 200, max: count * 20000, authority: "ITA s.120(1)(d) — fine RM200 to RM20,000, or up to 6 months' imprisonment, or both, per offence" });
 

@@ -2,7 +2,7 @@
 
 KSLeow - In-House Training
 
-Interactive tools for the KS Leow Tax Consultant Sdn Bhd in-house training, 7 Nov 2026 (B & K Academy PLT). Position as at 7 Nov 2026 · training tool, not tax advice.
+Interactive tools for the KS Leow Tax Consultant Sdn Bhd in-house training, 7 Nov 2026 (B & K Academy PLT). Position as at 10 Nov 2026 · training tool, not tax advice.
 
 **Live site:** https://ckleow79-bot.github.io/tax-toolkit-2026/ · **Presenter:** `/presenter.html`
 
